@@ -1,30 +1,53 @@
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Integer, String, DateTime, JSON, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from enum import Enum
+from datetime import datetime
+from typing import Any
 
-db = SQLAlchemy()
 
 class Species(Enum):
     CAT = 1
+    DOG = 2
+
+class EventType(Enum):
+    Food = 1
+    Litter = 2
+    Medicine = 3
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+db.Model.registry.update_type_annotation_map(
+  {
+    datetime: DateTime(timezone=True),
+    dict[str, Any]: JSON
+  }
+)
 
 #####################################################
 
 class Pet(db.Model):
-    __tablename__ = 'pets'
+  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+  species: Mapped[Species]
+  name: Mapped[str] = mapped_column(String(64))
+  birthdate: Mapped[datetime]
+  photo_addr: Mapped[str] = mapped_column(String(64))
 
-    species = db.Column(db.Enum(Species), nullable=False)
-    name = db.Column(db.String(64), nullable=False)
-
-    def __repr__(self):
+  def __repr__(self):
         return "<Pet %s>" % (self.name)
     
 class Event(db.Model):
-    __tablename__ = 'events'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+    timestamp: Mapped[datetime] = mapped_column(nullable=False)
+    type: Mapped[EventType] = mapped_column(nullable=False, index=True)
+    meta: Mapped[dict[str, Any]]
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
+    created_by: Mapped[str] = mapped_column(String(64))
 
-    timestamp = db.Column(db.DateTime(), nullable=False)
-    type = db.Column(db.String(64), nullable=False)
-    meta = db.Column(db.JSON)
-    created_at = db.Column(db.DateTime(), nullable=False)
-    created_by = db.Column(db.String(64))
 
     def __repr__(self):
         return '<Event %s - %s>' (self.timestamp, self.type)
@@ -34,8 +57,9 @@ class Event(db.Model):
 def connect_to_db(app, db_uri=None):
     """Connect the database to our Flask app."""
 
-    # Configure to use our PstgreSQL database
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or "postgresql:///cattracker"
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'postgresql://pettracker'
+
+    "postgresql:///pettracker"
     app.config['SQLALCHEMY_ECHO'] = True
     db.app = app
     db.init_app(app)
