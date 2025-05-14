@@ -33,8 +33,8 @@ class Pet(db.Model):
   uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
   species: Mapped[Species]
   name: Mapped[str] = mapped_column(String(64))
-  birthdate: Mapped[datetime]
-  photo_addr: Mapped[str] = mapped_column(String(64))
+  birthdate: Mapped[datetime] = mapped_column(nullable=True)
+  photo_addr: Mapped[str] = mapped_column(String(64), nullable=True)
 
   def __repr__(self):
         return "<Pet %s>" % (self.name)

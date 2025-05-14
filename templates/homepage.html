@@ -2,17 +2,37 @@
 {% block content %}
    
     <div class="row-fluid">
-        <h3>Pet Tracker</h3>
-        <table>
+      <h3>Pet Tracker</h3>
+      <table>
+        <tr>
+          <th>Name</th>
+          <th>Age</th>
+          <th></th>
+          <th></th>
+        </tr>
+        {% for pet in pets %}
           <tr>
-            <th>Name</th>
-            <th>Age</th>
-            <th></th>
-            <th></th>
+            <td>
+              {{ pet.name }}
+            </td>
+            <td>
+              {{ pet.birthdate }}
+            </td>
+            <td>
+
+            </td>
+            <td>
+
+            </td>
           </tr>
-          
-          
-        </table>
+        {% endfor %}
+      </table>
+
+      {% if pets %}
+        <p>{{ pets }}</p>
+      {% else %}
+        <p>No Pets</p>
+      {% endif %}
     </div>
 
 {% endblock %}
