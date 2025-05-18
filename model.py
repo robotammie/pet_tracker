@@ -5,21 +5,21 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from enum import Enum
 from datetime import datetime
 from typing import Any
+from . import server
 
-
+db = server.db
 class Species(Enum):
-    CAT = 1
-    DOG = 2
+  CAT = 1
+  DOG = 2
 
 class EventType(Enum):
-    Food = 1
-    Litter = 2
-    Medicine = 3
+  Food = 1
+  Litter = 2
+  Medicine = 3
 
 class Base(DeclarativeBase):
     pass
 
-db = SQLAlchemy(model_class=Base)
 db.Model.registry.update_type_annotation_map(
   {
     datetime: DateTime(timezone=True),
@@ -37,35 +37,37 @@ class Pet(db.Model):
   photo_addr: Mapped[str] = mapped_column(String(64), nullable=True)
 
   def __repr__(self):
-        return "<Pet %s>" % (self.name)
+    return "<Pet %s>" % (self.name)
     
 class Event(db.Model):
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
-    timestamp: Mapped[datetime] = mapped_column(nullable=False)
-    type: Mapped[EventType] = mapped_column(nullable=False, index=True)
-    meta: Mapped[dict[str, Any]]
-    created_at: Mapped[datetime] = mapped_column(nullable=False)
-    created_by: Mapped[str] = mapped_column(String(64))
+  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+  timestamp: Mapped[datetime] = mapped_column(nullable=False)
+  type: Mapped[EventType] = mapped_column(nullable=False, index=True)
+  meta: Mapped[dict[str, Any]]
+  created_at: Mapped[datetime] = mapped_column(nullable=False)
+  created_by: Mapped[str] = mapped_column(String(64))
 
 
-    def __repr__(self):
-        return '<Event %s - %s>' (self.timestamp, self.type)
+  def __repr__(self):
+    return '<Event %s - %s>' (self.timestamp, self.type)
 
 ###############################################################
 
 def connect_to_db(app, db_uri=None):
-    """Connect the database to our Flask app."""
+  """Connect the database to our Flask app."""
+  print("\n\n\n\n")
+  print(db_uri)
+  print("\n\n\n\n")
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'postgresql://pettracker'
+  app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'postgresql://pettracker'
+  app.config['SQLALCHEMY_ECHO'] = True
 
-    "postgresql:///pettracker"
-    app.config['SQLALCHEMY_ECHO'] = True
-    db.app = app
-    db.init_app(app)
+  db.app = app
+  db.init_app(app)
 
 
 if __name__ == "__main__":
-    from server import app
-    connect_to_db(app)
-    print('Connected')
+  from server import app
+  connect_to_db(app)
+  print('Connected')
