@@ -1,13 +1,21 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, DateTime, JSON, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from enum import Enum
+from sqlalchemy import Integer, String, DateTime, JSON, ForeignKey, create_engine
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
+from enum import Enum
 from typing import Any
-from . import server
 
-db = server.db
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+
 class Species(Enum):
   CAT = 1
   DOG = 2
@@ -41,7 +49,8 @@ class Pet(db.Model):
     
 class Event(db.Model):
   id: Mapped[int] = mapped_column(Integer, primary_key=True)
-  pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+  pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
+  pet: Mapped["Pet"] = relationship()
   timestamp: Mapped[datetime] = mapped_column(nullable=False)
   type: Mapped[EventType] = mapped_column(nullable=False, index=True)
   meta: Mapped[dict[str, Any]]
@@ -50,7 +59,7 @@ class Event(db.Model):
 
 
   def __repr__(self):
-    return '<Event %s - %s>' (self.timestamp, self.type)
+    return '<Event %s - %s>' % (self.timestamp, self.type)
 
 ###############################################################
 
@@ -68,6 +77,5 @@ def connect_to_db(app, db_uri=None):
 
 
 if __name__ == "__main__":
-  from server import app
   connect_to_db(app)
   print('Connected')
