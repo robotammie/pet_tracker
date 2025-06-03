@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+   
+    <div class="row-fluid">
+      <h3>Pet Tracker: Events</h3>
+      <table>
+        <tr>
+          <th>Timestamp</th>
+          <th>Pet</th>
+          <th>Type</th>
+          <th></th>
+        </tr>
+        {% for event in events %}
+          <tr>
+            <td>
+              {{ event['timestamp'] }}
+            </td>
+            <td>
+              {{ event['pet'] }}
+            </td>
+            <td>
+              {{ event['type'] }}
+            </td>
+            <td>
+              {{ event['meta'] }}
+            </td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+{% endblock %}

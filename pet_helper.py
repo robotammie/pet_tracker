@@ -11,6 +11,7 @@ def all():
   for pet in pet_data:
      pets.append(
         {
+           'id':  pet.uuid,
            'name': pet.name,
            'age': age(pet.birthdate)
         }

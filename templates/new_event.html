@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block content %}
+   
+    <div class="row-fluid">
+      <h3>Pet Tracker: New Event</h3>
+      <form action="/events" method="post" class="new-event">
+        <div class="new-event-field">
+          Event Type:
+          <label for="event-type">
+            <input type="radio" name="event-type" value="1" required />
+            Food
+          </label>
+          <label for="event-type">
+            <input type="radio" name="event-type" value="2" required />
+            Litter
+          </label>
+          <label for="event-type">
+            <input type="radio" name="event-type" value="3" required />
+            Medicine
+          </label>
+        </div>
+        <div class="new-event-field">
+          <label for="pet">Pet:   </label>
+          <select name="pet" id="pet">
+            <option value=""></option>
+            {% for pet in pets %}
+              <option value="{{ pet['id'] }}">{{ pet['name'] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="new-event-field">
+          <label for="event-time">Time:</label>
+          <input
+            type="datetime-local"
+            id="event-time"
+            name="event-time"
+            value="{{ now }}"
+            min="2025-01-01T00:00"
+            max="2030-12-31T00:00" />
+        </div>
+        <div class="new-event-field">
+          <label for="meta">meta:   </label>
+          <input type="text" name="meta" id="meta"/>
+        </div>
+        <button>Create</button>
+      </form>
+    </div>
+
+{% endblock %}
