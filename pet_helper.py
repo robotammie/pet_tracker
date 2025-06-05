@@ -1,21 +1,28 @@
 import os
 from datetime import datetime
 from dateutil import relativedelta
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from pytz import timezone
 from . import model
 
-def all():
-  pet_data = model.Pet.query.all()
+def all(email=None):
+  with Session(model.engine) as s:
+    if email:
+      pet_data = s.execute(select(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.email == email))
+    else:
+      pet_data = s.execute(select(model.Pet))
 
-  pets = []
-  for pet in pet_data:
-     pets.append(
-        {
-           'id':  pet.uuid,
-           'name': pet.name,
-           'age': age(pet.birthdate)
-        }
-     )
+    pets = []
+    for row in pet_data:
+      for pet in row:
+        pets.append(
+            {
+              'id':  pet.uuid,
+              'name': pet.name,
+              'age': age(pet.birthdate)
+            }
+        )
 
   return(pets)
 

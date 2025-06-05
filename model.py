@@ -37,6 +37,15 @@ db.Model.registry.update_type_annotation_map(
 
 #####################################################
 
+class AppUser(db.Model):
+  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+  name: Mapped[str] = mapped_column(String(64))
+  email: Mapped[str] = mapped_column(String(64), index=True)
+
+  def __repr__(self):
+    return "<User %s>" % (self.email)
+
+
 class Pet(db.Model):
   uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
   species: Mapped[Species]
@@ -45,18 +54,27 @@ class Pet(db.Model):
   photo_addr: Mapped[str] = mapped_column(String(64), nullable=True)
 
   def __repr__(self):
-    return "<Pet %s>" % (self.name)
-    
+    return "<Pet %s>"% (self.name)
+
+
+class PetUser(db.Model):
+  id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
+  user_id: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'))
+  pet_id: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+
+def __repr__(self):
+    return "<PetUser %s - %s>" % (self.user, self.pet)
+
+
 class Event(db.Model):
-  id: Mapped[int] = mapped_column(Integer, primary_key=True)
+  id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
   pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
   pet: Mapped["Pet"] = relationship()
   timestamp: Mapped[datetime] = mapped_column(nullable=False)
   type: Mapped[EventType] = mapped_column(nullable=False, index=True)
   meta: Mapped[dict[str, Any]]
   created_at: Mapped[datetime] = mapped_column(nullable=False)
-  created_by: Mapped[str] = mapped_column(String(64))
-
+  created_by: Mapped[str] = mapped_column(String(64), ForeignKey('user.uuid'), nullable=True)
 
   def __repr__(self):
     return '<Event %s - %s>' % (self.timestamp, self.type)

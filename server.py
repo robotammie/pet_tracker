@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import render_template, request
+from flask import render_template, request, session
 from pytz import timezone
 
 from . import event_helper
@@ -11,9 +11,10 @@ app = model.app
 
 @app.route('/')
 def home():
-  pets = pet_helper.all()
-
-  return render_template("homepage.html", pets=pets)
+  match request.method:
+    case 'GET':
+      pets = pet_helper.all('tammie.kahnhauser@gmail.com')
+      return render_template("homepage.html", pets=pets)
 
 @app.route('/events', methods=['GET', 'POST'])
 def show_events():
