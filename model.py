@@ -65,10 +65,6 @@ class Event(db.Model):
 
 def connect_to_db(app, db_uri=None):
   """Connect the database to our Flask app."""
-  print("\n\n\n\n")
-  print(db_uri)
-  print("\n\n\n\n")
-
   app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'postgresql://pettracker'
   app.config['SQLALCHEMY_ECHO'] = True
 
