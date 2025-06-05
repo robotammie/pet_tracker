@@ -6,7 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>     
+<body>
+  <div>
+    <form action="/logout" method="get" class="logout">
+      <button>Log Out</button>
+    </form>
+  </div>
+
   {% block content %} put your content here {% endblock %}
 </body>
 </html>

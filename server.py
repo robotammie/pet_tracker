@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-from flask import render_template, request, session
+from flask import redirect, render_template, request, session
 from pytz import timezone
 
 from . import event_helper
@@ -8,13 +8,19 @@ from . import model
 from . import pet_helper
 
 app = model.app
+app.secret_key = 'BAD_SECRET_KEY'
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def home():
   match request.method:
     case 'GET':
-      pets = pet_helper.all('tammie.kahnhauser@gmail.com')
-      return render_template("homepage.html", pets=pets)
+      if not session['email']:
+        return render_template("login.html")
+    case 'POST':
+      session['email'] = request.form['email']
+
+  pets = pet_helper.all(session['email'])
+  return render_template("homepage.html", pets=pets)
 
 @app.route('/events', methods=['GET', 'POST'])
 def show_events():
@@ -40,6 +46,12 @@ def new_event():
   pets = pet_helper.all()
 
   return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets)
+
+
+@app.route('/logout')
+def logout():
+  session['email'] = None
+  return redirect("/")
 
 
 ########################

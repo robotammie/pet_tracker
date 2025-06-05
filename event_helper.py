@@ -77,7 +77,9 @@ def all_events():
     })
   return(event_info)
 
-def new(event_type, created_by='admin', meta={}, pet_uuid=None, timestamp=None):
+def new(event_type, meta={}, pet_uuid=None, timestamp=None):
+  created_by = session['email']
+
   with Session(model.engine) as session:
     match event_type:
       # case model.EventType.Food:
@@ -90,7 +92,6 @@ def new(event_type, created_by='admin', meta={}, pet_uuid=None, timestamp=None):
       # case 3:
         new_event = Medicine(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
       case _:
-        breakpoint()
         return
 
     session.add(new_event)
