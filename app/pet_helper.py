@@ -1,10 +1,11 @@
 import os
+import model
+
 from datetime import datetime
 from dateutil import relativedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pytz import timezone
-from . import model
 
 def all(email=None):
   with Session(model.engine) as s:
@@ -35,7 +36,7 @@ def age(birthdate):
 
 
 if __name__ == '__main__':
-    from server import app
+    from app.server import app
 
     with app.app_context():
       model.connect_to_db(app, os.environ.get('DATABASE_URL'))

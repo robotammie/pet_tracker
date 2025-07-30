@@ -1,11 +1,12 @@
 import os
+import event_helper
+import model
+import pet_helper
+
 from datetime import datetime
 from flask import redirect, render_template, request, session
 from pytz import timezone
 
-from . import event_helper
-from . import model
-from . import pet_helper
 
 app = model.app
 app.secret_key = 'BAD_SECRET_KEY'
@@ -14,7 +15,7 @@ app.secret_key = 'BAD_SECRET_KEY'
 def home():
   match request.method:
     case 'GET':
-      if not session['email']:
+      if not session.get('email'):
         return render_template("login.html")
     case 'POST':
       session['email'] = request.form['email']
@@ -31,7 +32,7 @@ def show_events():
       data = request.form
       event_helper.new(
         event_type=int(data.get('event-type')),
-        created_by='admin',
+        created_by='1',
         meta=data.get('meta'),
         pet_uuid=data.get('pet'),
         timestamp=data.get('event-time')

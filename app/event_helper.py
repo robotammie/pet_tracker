@@ -1,8 +1,9 @@
+import model
+
 from datetime import datetime
 from pytz import timezone
 from sqlalchemy.orm import Session
 from uuid import uuid4
-from . import model
 
 
 class Food(model.Event):

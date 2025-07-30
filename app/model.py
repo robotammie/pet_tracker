@@ -74,7 +74,7 @@ class Event(db.Model):
   type: Mapped[EventType] = mapped_column(nullable=False, index=True)
   meta: Mapped[dict[str, Any]]
   created_at: Mapped[datetime] = mapped_column(nullable=False)
-  created_by: Mapped[str] = mapped_column(String(64), ForeignKey('user.uuid'), nullable=True)
+  created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
 
   def __repr__(self):
     return '<Event %s - %s>' % (self.timestamp, self.type)
