@@ -1,7 +1,9 @@
 import model
 
 from datetime import datetime
+from flask import session
 from pytz import timezone
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from uuid import uuid4
 
@@ -66,20 +68,26 @@ class Medicine(model.Event):
 
 # # # # # # # # # # # # # # # # # # # # #
 
-def all_events():
-  events = model.Event.query.all()
-  event_info = []
-  for event in events:
-    event_info.append({
-      'timestamp': event.timestamp,
-      'pet': event.pet.name,
-      'type': event.type,
-      'meta': event.meta,
-    })
-  return(event_info)
+def all_events() -> [model.Event]:
+  with Session(model.engine) as s:
+    if not session['email']:
+      return []
+    else:
+      event_data = s.execute(select(model.Event).join(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.email == session['email']))
 
-def new(event_type, meta={}, pet_uuid=None, timestamp=None):
-  created_by = session['email']
+    events = []
+    for row in event_data:
+      for event in row:
+        events.append({
+          'timestamp': event.timestamp,
+          'pet': event.pet.name,
+          'type': event.type,
+          'meta': event.meta,
+        })
+    
+  return(events)
+
+def new(event_type: model.EventType, created_by='1', meta={}, pet_uuid=None, timestamp=None):
 
   with Session(model.engine) as session:
     match event_type:

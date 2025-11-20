@@ -41,10 +41,18 @@ class AppUser(db.Model):
   uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
   name: Mapped[str] = mapped_column(String(64))
   email: Mapped[str] = mapped_column(String(64), index=True)
+  # households:
 
   def __repr__(self):
     return "<User %s>" % (self.email)
 
+class Household(db.Model):
+  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+  name: Mapped[str] = mapped_column(String(64))
+  email: Mapped[str] = mapped_column(String(64), index=True)
+
+  def __repr__(self):
+    return "<User %s>" % (self.email)
 
 class Pet(db.Model):
   uuid: Mapped[str] = mapped_column(String(64), primary_key=True)

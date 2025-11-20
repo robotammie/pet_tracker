@@ -11,6 +11,7 @@ from pytz import timezone
 app = model.app
 app.secret_key = 'BAD_SECRET_KEY'
 
+
 @app.route('/', methods=['GET', 'POST'])
 def home():
   match request.method:
@@ -23,8 +24,10 @@ def home():
   pets = pet_helper.all(session['email'])
   return render_template("homepage.html", pets=pets)
 
+
 @app.route('/events', methods=['GET', 'POST'])
 def show_events():
+  user = session['email']
   match request.method:
     case 'GET':
       events = event_helper.all_events()
@@ -32,7 +35,7 @@ def show_events():
       data = request.form
       event_helper.new(
         event_type=int(data.get('event-type')),
-        created_by='1',
+        # created_by='1',
         meta=data.get('meta'),
         pet_uuid=data.get('pet'),
         timestamp=data.get('event-time')
@@ -40,6 +43,7 @@ def show_events():
       events = event_helper.all_events()
 
   return render_template("events.html", events=events)
+
 
 @app.route('/events/new')
 def new_event():
