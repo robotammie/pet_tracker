@@ -3,6 +3,9 @@
    
     <div class="row-fluid">
       <h3>Pet Tracker</h3>
+      <form action="/events" method="get" class="events">
+        <button>Events</button>
+      </form>
       <table>
         <tr>
           <th>Name</th>
@@ -19,10 +22,8 @@
               {{ pet['age'] }}
             </td>
             <td>
-
             </td>
             <td>
-
             </td>
           </tr>
         {% endfor %}

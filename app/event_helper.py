@@ -68,12 +68,12 @@ class Medicine(model.Event):
 
 # # # # # # # # # # # # # # # # # # # # #
 
-def all_events() -> [model.Event]:
+def all_events() -> list[model.Event]:
   with Session(model.engine) as s:
-    if not session['email']:
+    if not session['user']:
       return []
     else:
-      event_data = s.execute(select(model.Event).join(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.email == session['email']))
+      event_data = s.execute(select(model.Event).join(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.uuid == session.get('user').uuid))
 
     events = []
     for row in event_data:

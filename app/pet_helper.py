@@ -7,12 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pytz import timezone
 
-def all(email=None) -> {str, any}:
+def all(user: model.AppUser) -> {str, any}:
   with Session(model.engine) as s:
-    if email:
-      pet_data = s.execute(select(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.email == email))
-    else:
-      pet_data = s.execute(select(model.Pet))
+    pet_data = s.execute(select(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.uuid == user.uuid)).all()
 
     pets = []
     for row in pet_data:
