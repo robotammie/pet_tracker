@@ -14,18 +14,18 @@ app.secret_key = 'BAD_SECRET_KEY'
 
 @app.before_request
 def get_user():
-    match request.method:
-      case 'GET':
-        if not session.get('email'):
-          return render_template("login.html")
-      case 'POST':
-        session['email'] = request.form['email']
-    
+    if not session.get('email'):
+      return render_template("login.html")
+
     session['user'] = user_helper.get_user(session.get('email', None))
 
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
+  """
+  GET: show all pets
+  POST: create a new pet
+  """
   user = session.get('user')
   pets = pet_helper.all(user)
   return render_template("homepage.html", pets=pets)
@@ -33,18 +33,35 @@ def home():
 
 @app.route('/events', methods=['GET', 'POST'])
 def show_events():
+  """
+  GET: show all events
+  POST: create a new event
+  """
   user = session.get('user')
   match request.method:
     case 'GET':
-      events = event_helper.all_events()
+      events = event_helper.day_view(datetime.now(tz=timezone('America/Los_Angeles')))
     case 'POST':
       data = request.form
+
+      # Make sure event type is an integer.
+      try:
+        ev_type = int(data.get('event-type'))
+      except ValueError:
+        return render_template("events.html", error="Invalid event type")
+
+      # Event time must be in the format YYYY-MM-DDTHH:MM.
+      try:
+        event_time = datetime.strptime(data.get('event-time'), '%Y-%m-%dT%H:%M')
+      except ValueError:
+        return render_template("events.html", error="Invalid event time")
+
       event_helper.new(
-        event_type=int(data.get('event-type')),
-        created_by=user.id,
+        event_type=model.EventType(ev_type),
+        created_by=user.uuid,
         meta=data.get('meta'),
         pet_uuid=data.get('pet'),
-        timestamp=data.get('event-time')
+        timestamp=event_time
       )
       events = event_helper.all_events()
 
@@ -53,14 +70,21 @@ def show_events():
 
 @app.route('/events/new')
 def new_event():
+  """
+  GET: show the new event form
+  """
+  user = session.get('user')
   now = datetime.now(tz=timezone('America/Los_Angeles'))
-  pets = pet_helper.all()
+  pets = pet_helper.all(user)
 
   return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets)
 
 
 @app.route('/logout')
 def logout():
+  """
+  Log out the user
+  """
   session['email'] = None
   session['user'] = None
   return redirect("/")

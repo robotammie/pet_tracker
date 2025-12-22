@@ -3,7 +3,7 @@ import os
 from flask import Flask
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, String, DateTime, JSON, ForeignKey, create_engine
+from sqlalchemy import Float, Integer, String, DateTime, JSON, ForeignKey, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from enum import Enum
@@ -31,6 +31,31 @@ class EventType(Enum):
   Food = 1
   Litter = 2
   Medicine = 3
+
+class Unit(Enum):
+  GRAMS = 'grams'
+  CUPS = 'cups'
+  OZ = 'oz'
+  CANS = 'cans'
+
+  def singularize(self, amt):
+    if amt != 1:
+      return self.value
+    elif self == Unit.OZ:
+      return 'oz'
+    elif self == Unit.GRAMS:
+      return 'gram'
+    elif self == Unit.CUPS:
+      return 'cup'
+    elif self == Unit.CANS:
+      return 'can'
+
+
+class FoodType(Enum):
+  WET = 'wet'
+  DRY = 'dry'
+  TREATS = 'treats'
+  OTHER = 'other'
 
 class Base(DeclarativeBase):
     pass
@@ -92,7 +117,24 @@ class Event(db.Model):
   created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
 
   def __repr__(self):
-    return '<Event %s - %s>' % (self.timestamp, self.type)
+    return '<Event %s - %s>' % (self.type, self.timestamp)
+
+
+  class FoodMeta(db.Model):
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    pet_id: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+    pet: Mapped["Pet"] = relationship()
+    name: Mapped[str] = mapped_column(String(64))
+    type: Mapped[FoodType] = mapped_column(nullable=False)
+    serving_size: Mapped[float] = mapped_column(Float)
+    unit: Mapped[Unit] = mapped_column(nullable=False)
+    calories: Mapped[int] = mapped_column(Integer)
+
+    def calorie_count(self, amt):
+      return int(self.calories * amt / self.serving_size)
+
+    def __repr__(self):
+      return f"<FoodMeta {self.pet.name} - {self.name}>"
 
 ###############################################################
 

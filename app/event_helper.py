@@ -1,6 +1,6 @@
 import model
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import session
 from pytz import timezone
 from sqlalchemy import select
@@ -9,15 +9,6 @@ from uuid import uuid4
 
 
 class Food(model.Event):
-  """
-  meta example:
-    {
-      type: Hills Probiotic
-      amount: 1/2 cup
-      calories: 150
-    }
-  """
-
   def __init__(self, pet_uuid, created_by, meta={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
@@ -27,14 +18,15 @@ class Food(model.Event):
     self.type = model.EventType.Food
     self.created_at = now
     self.created_by = created_by
-    self.meta = meta  # TODO establish meta values and set validation
-
+    self.meta = {
+      'name': meta.get('name'),
+      'type': meta.get('type'),
+      'amount': meta.get('amount'),
+      'unit': meta.get('unit'),
+      'calories': meta.get('calories'),
+    }
 
 class Litter(model.Event):
-  """
-  meta example:
-    {}
-  """
   def __init__(self, created_by, pet_uuid=None, meta={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
@@ -44,17 +36,10 @@ class Litter(model.Event):
     self.type = model.EventType.Litter
     self.created_at = now
     self.created_by = created_by
-    self.meta = meta  # TODO establish meta values and set validation
-
+    self.meta = meta  # no current meta values for this type of event
+  
 
 class Medicine(model.Event):
-  """
-  meta example:
-    {
-      Medicine: Probiotic
-      Dose: 1 packet
-    }
-  """
   def __init__(self, created_by, pet_uuid=None, meta={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
@@ -64,7 +49,13 @@ class Medicine(model.Event):
     self.type = model.EventType.Medicine
     self.created_at = now
     self.created_by = created_by
-    self.meta = meta  # TODO establish meta values and set validation
+    self.meta = {
+      'name': meta.get('medicine'),
+      'dose': meta.get('dose'),
+    }
+
+  def __repr__(self):
+    return f"<Medicine {self.meta.get('name')} - {self.meta.get('dose')} - {self.timestamp}>"
 
 # # # # # # # # # # # # # # # # # # # # #
 
@@ -87,15 +78,42 @@ def all_events() -> list[model.Event]:
     
   return(events)
 
-def new(event_type: model.EventType, created_by='1', meta={}, pet_uuid=None, timestamp=None):
+def day_view(date: datetime) -> list[{'pet': str, 'type': model.EventType, 'meta': dict[str, any]}]:
+  with Session(model.engine) as s:
+    if not session['user']:
+      return []
+    else:
+      food = s.execute(
+        select(model.Event.pet_uuid, model.Event.meta)
+        .join(model.Pet)
+        .join(model.PetUser)
+        .where(model.PetUser.user_id == session.get('user').uuid)
+        .where(model.Event.type == model.EventType.Food)
+        .where(model.Event.timestamp >= date)
+        .where(model.Event.timestamp < date + timedelta(days=1))
+      ).all()
 
+
+      events = []
+      for row in food:
+        for event in row:
+          events.append({
+            'pet': event.pet.name,
+            'type': event.type,
+            'meta': event.meta,
+          })
+
+      return events
+
+
+def new(event_type: model.EventType, created_by: str, meta={}, pet_uuid=None, timestamp=None):
   with Session(model.engine) as session:
     match event_type:
       # case model.EventType.Food:
-      case 1:
+      case model.EventType.Food:
         new_event = Food(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
       # case model.EventType.Litter:
-      case 2:
+      case model.EventType.Litter:
         new_event = Litter(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
       case model.EventType.Medicine:
       # case 3:
