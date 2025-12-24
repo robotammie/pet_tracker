@@ -5,53 +5,51 @@ from flask import session
 from pytz import timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from uuid import uuid4
 
 
 class Food(model.Event):
-  def __init__(self, pet_uuid, created_by, meta={}, timestamp=None):
+  def __init__(self, household_uuid, created_by, data={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
-    self.uuid = uuid4()
-    self.pet_uuid = pet_uuid
+    self.household_uuid = household_uuid
+    self.pet_uuid = data.get('pet') or None
     self.timestamp = timestamp or now
     self.type = model.EventType.Food
     self.created_at = now
     self.created_by = created_by
     self.meta = {
-      'name': meta.get('name'),
-      'type': meta.get('type'),
-      'amount': meta.get('amount'),
-      'unit': meta.get('unit'),
-      'calories': meta.get('calories'),
+      'name': data.get('food-name'),
+      'type': data.get('food-type'),
+      'amount': data.get('food-amount'),
+      'unit': data.get('food-unit'),
+      'calories': data.get('food-calories'),
     }
-
 class Litter(model.Event):
-  def __init__(self, created_by, pet_uuid=None, meta={}, timestamp=None):
+  def __init__(self, household_uuid, created_by, data={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
-    self.uuid = uuid4()
-    self.pet_uuid = pet_uuid
+    self.household_uuid = household_uuid
+    self.pet_uuid = data.get('pet') or None
     self.timestamp = timestamp or now
     self.type = model.EventType.Litter
     self.created_at = now
     self.created_by = created_by
-    self.meta = meta  # no current meta values for this type of event
+    self.meta = None  # no current meta values for this type of event
   
 
 class Medicine(model.Event):
-  def __init__(self, created_by, pet_uuid=None, meta={}, timestamp=None):
+  def __init__(self, household_uuid, created_by, data={}, timestamp=None):
     now = datetime.now(tz=timezone('America/Los_Angeles'))
     
-    self.uuid = uuid4()
-    self.pet_uuid = pet_uuid
+    self.household_uuid = household_uuid
+    self.pet_uuid = data.get('pet') or None
     self.timestamp = timestamp or now
     self.type = model.EventType.Medicine
     self.created_at = now
     self.created_by = created_by
     self.meta = {
-      'name': meta.get('medicine'),
-      'dose': meta.get('dose'),
+      'name': data.get('medicine-name'),
+      'dose': data.get('medicine-dose'),
     }
 
   def __repr__(self):
@@ -64,60 +62,64 @@ def all_events() -> list[model.Event]:
     if not session['user']:
       return []
     else:
-      event_data = s.execute(select(model.Event).join(model.Pet).join(model.PetUser).join(model.AppUser).where(model.AppUser.uuid == session.get('user').uuid))
+      event_data = s.execute(
+        select(model.Event).join(model.Pet, isouter=True).order_by(model.Event.timestamp.desc())
+        .where(model.Event.household_uuid == session.get('household').uuid)
+      )
 
     events = []
     for row in event_data:
       for event in row:
         events.append({
           'timestamp': event.timestamp,
-          'pet': event.pet.name,
-          'type': event.type,
+          'pet': event.pet.name if event.pet_uuid else '',
+          'type': event.type.name,
           'meta': event.meta,
         })
     
   return(events)
 
-def day_view(date: datetime) -> list[{'pet': str, 'type': model.EventType, 'meta': dict[str, any]}]:
+def day_view(date: datetime) -> list[{'type': model.EventType, 'pet': str, 'meta': dict[str, any]}]:
   with Session(model.engine) as s:
-    if not session['user']:
-      return []
-    else:
-      food = s.execute(
-        select(model.Event.pet_uuid, model.Event.meta)
-        .join(model.Pet)
-        .join(model.PetUser)
-        .where(model.PetUser.user_id == session.get('user').uuid)
-        .where(model.Event.type == model.EventType.Food)
-        .where(model.Event.timestamp >= date)
-        .where(model.Event.timestamp < date + timedelta(days=1))
-      ).all()
+    start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = start_date + timedelta(days=1)
+    query = (select(model.Event.type, model.Pet.name, model.Event.meta).join(model.Pet, isouter=True)
+      .where(model.Event.household_uuid == session.get('household').uuid)
+      .where(model.Event.timestamp >= start_date)
+      .where(model.Event.timestamp < end_date))
+    events_data = s.execute(query)
+
+  events = dict[str, any]([])
+  print('events_data', events_data)
+  for event in events_data:
+    match event[0]:
+      case model.EventType.Food:
+        val = events.get('Food', {})
+        val.update([(event[1], events.get('Food', {}).get(event[1], 0) + float(event[2].get('calories', 0)))])    
+        events.update({ 'Food': val })
+      case model.EventType.Litter:
+        val = events.get('Litter', {})
+        val.update([('', events.get('Litter', {}).get('', 0) + 1 )])    
+        events.update({'Litter': val})
+      # case model.EventType.Medicine:
+      #   events.update({ 'Medicine': events.get('Medicine', 0) + 1 })
+
+  return(events)
 
 
-      events = []
-      for row in food:
-        for event in row:
-          events.append({
-            'pet': event.pet.name,
-            'type': event.type,
-            'meta': event.meta,
-          })
-
-      return events
-
-
-def new(event_type: model.EventType, created_by: str, meta={}, pet_uuid=None, timestamp=None):
+def new(household_uuid: str, event_type: model.EventType, created_by: str, data: dict[str, any], timestamp=None):
   with Session(model.engine) as session:
+
     match event_type:
       # case model.EventType.Food:
       case model.EventType.Food:
-        new_event = Food(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
+        new_event = Food(household_uuid=household_uuid, created_by=created_by, data=data, timestamp=timestamp)
       # case model.EventType.Litter:
       case model.EventType.Litter:
-        new_event = Litter(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
+        new_event = Litter(household_uuid=household_uuid, created_by=created_by, data=data, timestamp=timestamp)
       case model.EventType.Medicine:
       # case 3:
-        new_event = Medicine(pet_uuid=pet_uuid, created_by=created_by, meta=meta, timestamp=timestamp)
+        new_event = Medicine(household_uuid=household_uuid, created_by=created_by, data=data, timestamp=timestamp)
       case _:
         return
 

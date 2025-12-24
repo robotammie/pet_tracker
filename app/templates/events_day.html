@@ -10,26 +10,24 @@
       </div>
       <table>
         <tr>
-          <th>Pet</th>
           <th>Type</th>
+          <th>Pet</th>
           <th>Meta</th>
-          <th>Timestamp</th>
         </tr>
-        {% for event in events %}
-          <tr>
-            <td>
-              {{ event['pet'] }}
-            </td>
-            <td>
-              {{ event['type'] }}
-            </td>
-            <td>
-              {{ event['meta'] }}
-            </td>
-            <td>
-              {{ event['timestamp'] }}
-            </td>
-          </tr>
+        {% for type, event in events.items() %}
+          {% for pet, value in event.items() %}
+            <tr>
+              <td>
+                {{ type }}
+              </td>
+              <td>
+                {{ pet }}
+              </td>
+              <td>
+                {{ value }}
+              </td>
+            </tr>
+          {% endfor %}
         {% endfor %}
       </table>
     </div>

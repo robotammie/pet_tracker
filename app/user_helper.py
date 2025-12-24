@@ -12,3 +12,10 @@ def get_user(email: str) -> model.AppUser:
         resp = s.execute(stmt).first()
         user = resp[0] if resp else None
     return user
+
+def get_household(user: model.AppUser) -> model.Household:
+    with Session(model.engine) as s:
+        stmt = select(model.Household).join(model.UserHousehold).where(model.UserHousehold.user_id == user.uuid)
+        resp = s.execute(stmt).first()
+        household = resp[0] if resp else None
+    return household

@@ -19,6 +19,11 @@ def get_user():
 
     session['user'] = user_helper.get_user(session.get('email', None))
 
+@app.before_request
+def get_household():  # separate from get_user to allow for multiple households per user in future
+  session['household'] = user_helper.get_household(session.get('user'))
+
+#####################################################
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -26,8 +31,8 @@ def home():
   GET: show all pets
   POST: create a new pet
   """
-  user = session.get('user')
-  pets = pet_helper.all(user)
+  household = session.get('household')
+  pets = pet_helper.all(household.uuid)
   return render_template("homepage.html", pets=pets)
 
 
@@ -40,7 +45,7 @@ def show_events():
   user = session.get('user')
   match request.method:
     case 'GET':
-      events = event_helper.day_view(datetime.now(tz=timezone('America/Los_Angeles')))
+      events = event_helper.all_events()
     case 'POST':
       data = request.form
 
@@ -57,10 +62,10 @@ def show_events():
         return render_template("events.html", error="Invalid event time")
 
       event_helper.new(
+        household_uuid=session.get('household').uuid,
         event_type=model.EventType(ev_type),
-        created_by=user.uuid,
-        meta=data.get('meta'),
-        pet_uuid=data.get('pet'),
+        created_by=session.get('user').uuid,
+        data=data,
         timestamp=event_time
       )
       events = event_helper.all_events()
@@ -68,14 +73,41 @@ def show_events():
   return render_template("events.html", events=events)
 
 
+app.route('/events/all', methods=['GET'])
+def show_events():
+  """
+  GET: show all events
+  """
+  user = session.get('user')
+  match request.method:
+    case 'GET':
+      events = event_helper.all_events()
+  
+  return render_template("events.html", events=events)
+
+
+@app.route('/events/day', methods=['GET'])
+def show_events_day():
+  """
+  GET: show all events for a given day
+  """
+  user = session.get('user')
+  match request.method:
+    case 'GET':
+      events = event_helper.day_view(datetime.now(tz=timezone('America/Los_Angeles')))
+  
+  print(events)
+  return render_template("events_day.html", events=events)
+
+
 @app.route('/events/new')
 def new_event():
   """
   GET: show the new event form
   """
-  user = session.get('user')
+  household = session.get('household')
   now = datetime.now(tz=timezone('America/Los_Angeles'))
-  pets = pet_helper.all(user)
+  pets = pet_helper.all(household.uuid)
 
   return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets)
 

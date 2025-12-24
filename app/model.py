@@ -88,6 +88,8 @@ class Household(db.Model):
 
 class Pet(db.Model):
   uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+  household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=True)
+  household: Mapped["Household"] = relationship()
   species: Mapped[Species]
   name: Mapped[str] = mapped_column(String(64))
   birthdate: Mapped[datetime] = mapped_column(nullable=True)
@@ -97,17 +99,21 @@ class Pet(db.Model):
     return "<Pet %s>"% (self.name)
 
 
-class PetUser(db.Model):
+class UserHousehold(db.Model):
   id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
   user_id: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'))
-  pet_id: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
+  user: Mapped["AppUser"] = relationship()
+  household_id: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
+  household: Mapped["Household"] = relationship()
 
-def __repr__(self):
-    return "<PetUser %s - %s>" % (self.user, self.pet)
+  def __repr__(self):
+    return "<UserHousehold %s - %s>" % (self.user, self.household)
 
 
 class Event(db.Model):
   id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
+  household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=False)
+  household: Mapped["Household"] = relationship()
   pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
   pet: Mapped["Pet"] = relationship()
   timestamp: Mapped[datetime] = mapped_column(nullable=False)
@@ -115,6 +121,7 @@ class Event(db.Model):
   meta: Mapped[dict[str, Any]]
   created_at: Mapped[datetime] = mapped_column(nullable=False)
   created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
+  created_by_user: Mapped["AppUser"] = relationship()
 
   def __repr__(self):
     return '<Event %s - %s>' % (self.type, self.timestamp)
@@ -122,8 +129,8 @@ class Event(db.Model):
 
   class FoodMeta(db.Model):
     uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
-    pet_id: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'))
-    pet: Mapped["Pet"] = relationship()
+    household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
+    household: Mapped["Household"] = relationship()
     name: Mapped[str] = mapped_column(String(64))
     type: Mapped[FoodType] = mapped_column(nullable=False)
     serving_size: Mapped[float] = mapped_column(Float)
