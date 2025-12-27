@@ -8,15 +8,15 @@
           <label>Event Type:</label>
           <div style="display: flex; gap: 20px; margin-top: 5px;">
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="1" required />
+              <input type="radio" name="event-type" value="1" id="event-type-food" required />
               Food
             </label>
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="2" required />
+              <input type="radio" name="event-type" value="2" id="event-type-litter" required />
               Litter
             </label>
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="3" required />
+              <input type="radio" name="event-type" value="3" id="event-type-medicine" required />
               Medicine
             </label>
           </div>
@@ -40,28 +40,79 @@
             min="2025-01-01T00:00"
             max="2030-12-31T00:00" />
         </div>
-        <div class="new-event-field">
-          <label for="food-name">Food Name:</label>
-          <input type="text" name="food-name" id="food-name"/>
+        <div id="food-fields" style="display: none;">
+          <div style="display: flex; gap: 20px;">
+            <div class="new-event-field">
+              <label for="food-name">Food Name:</label>
+              <input type="text" name="food-name" id="food-name"/>
+            </div>
+            <div class="new-event-field">
+              <label for="food-type">Food Type:</label>
+              <select name="food-type" id="food-type">
+                <option value=""></option>
+                <option value="wet">Wet</option>
+                <option value="dry">Dry</option>
+                <option value="treats">Treats</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: flex; gap: 20px;">
+            <div class="new-event-field">
+              <label for="food-amount">Food Amount:</label>
+              <input type="text" name="food-amount" id="food-amount"/>
+            </div>
+            <div class="new-event-field">
+              <label for="food-unit">Food Unit:</label>
+              <select name="food-unit" id="food-unit">
+                <option value=""></option>
+                <option value="grams">Grams</option>
+                <option value="cups">Cups</option>
+                <option value="oz">Ounces</option>
+                <option value="cans">Cans</option>
+              </select>
+            </div>
+          </div>
+          <div class="new-event-field">
+            <label for="food-calories">Food Calories:</label>
+            <input type="text" name="food-calories" id="food-calories"/>
+          </div>
         </div>
-        <div class="new-event-field">
-          <label for="food-type">Food Type:</label>
-          <input type="text" name="food-type" id="food-type"/>
-        </div>
-        <div class="new-event-field">
-          <label for="food-amount">Food Amount:</label>
-          <input type="text" name="food-amount" id="food-amount"/>
-        </div>
-        <div class="new-event-field">
-          <label for="food-unit">Food Unit:</label>
-          <input type="text" name="food-unit" id="food-unit"/>
-        </div>
-        <div class="new-event-field">
-          <label for="food-calories">Food Calories:</label>
-          <input type="text" name="food-calories" id="food-calories"/>
+        <div id="medicine-fields" style="display: none;">
+          <div class="new-event-field">
+            <label for="medicine-name">Medicine Name:</label>
+            <input type="text" name="medicine-name" id="medicine-name"/>
+          </div>
+          <div class="new-event-field">
+            <label for="medicine-dose">Medicine Dose:</label>
+            <input type="text" name="medicine-dose" id="medicine-dose"/>
+          </div>
         </div>
         <button>Create</button>
       </form>
     </div>
+
+    <script>
+      // Get all event type radio buttons
+      const eventTypeRadios = document.querySelectorAll('input[name="event-type"]');
+      const foodFields = document.getElementById('food-fields');
+      const medicineFields = document.getElementById('medicine-fields');
+
+      // Function to toggle food fields visibility
+      function toggleFields() {
+        const foodSelected = document.getElementById('event-type-food').checked;
+        foodFields.style.display = foodSelected ? 'block' : 'none';
+        const medicineSelected = document.getElementById('event-type-medicine').checked;
+        medicineFields.style.display = medicineSelected ? 'block' : 'none';
+      }
+
+      // Add event listeners to all radio buttons
+      eventTypeRadios.forEach(radio => {
+        radio.addEventListener('change', toggleFields);
+      });
+
+      // Check initial state on page load
+      toggleFields();
+    </script>
 
 {% endblock %}
