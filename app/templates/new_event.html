@@ -5,22 +5,24 @@
       <h3>Pet Tracker: New Event</h3>
       <form action="/events" method="post" class="new-event">
         <div class="new-event-field">
-          Event Type:
-          <label for="event-type">
-            <input type="radio" name="event-type" value="1" required />
-            Food
-          </label>
-          <label for="event-type">
-            <input type="radio" name="event-type" value="2" required />
-            Litter
-          </label>
-          <label for="event-type">
-            <input type="radio" name="event-type" value="3" required />
-            Medicine
-          </label>
+          <label>Event Type:</label>
+          <div style="display: flex; gap: 20px; margin-top: 5px;">
+            <label style="display: flex; align-items: center; font-weight: normal;">
+              <input type="radio" name="event-type" value="1" required />
+              Food
+            </label>
+            <label style="display: flex; align-items: center; font-weight: normal;">
+              <input type="radio" name="event-type" value="2" required />
+              Litter
+            </label>
+            <label style="display: flex; align-items: center; font-weight: normal;">
+              <input type="radio" name="event-type" value="3" required />
+              Medicine
+            </label>
+          </div>
         </div>
         <div class="new-event-field">
-          <label for="pet">Pet:   </label>
+          <label for="pet">Pet:</label>
           <select name="pet" id="pet">
             <option value=""></option>
             {% for pet in pets %}
@@ -39,23 +41,23 @@
             max="2030-12-31T00:00" />
         </div>
         <div class="new-event-field">
-          <label for="food-name">Food Name:   </label>
+          <label for="food-name">Food Name:</label>
           <input type="text" name="food-name" id="food-name"/>
         </div>
         <div class="new-event-field">
-          <label for="food-type">Food Type:   </label>
+          <label for="food-type">Food Type:</label>
           <input type="text" name="food-type" id="food-type"/>
         </div>
         <div class="new-event-field">
-          <label for="food-amount">Food Amount:   </label>
+          <label for="food-amount">Food Amount:</label>
           <input type="text" name="food-amount" id="food-amount"/>
         </div>
         <div class="new-event-field">
-          <label for="food-unit">Food Unit:   </label>
+          <label for="food-unit">Food Unit:</label>
           <input type="text" name="food-unit" id="food-unit"/>
         </div>
         <div class="new-event-field">
-          <label for="food-calories">Food Calories:   </label>
+          <label for="food-calories">Food Calories:</label>
           <input type="text" name="food-calories" id="food-calories"/>
         </div>
         <button>Create</button>
