@@ -2,20 +2,34 @@ import model
 
 from flask import session
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-from time import sleep
+from typing import Optional
 
 
-def get_user(email: str) -> model.AppUser:
-    with Session(model.engine) as s:
-        stmt = select(model.AppUser).where(model.AppUser.email == email)
-        resp = s.execute(stmt).first()
-        user = resp[0] if resp else None
-    return user
+def get_user(email: str) -> Optional[model.AppUser]:
+    """Get user by email address.
+    
+    Args:
+        email: User's email address
+        
+    Returns:
+        AppUser object if found, None otherwise
+    """
+    stmt = select(model.AppUser).where(model.AppUser.email == email)
+    resp = model.db.session.execute(stmt).first()
+    return resp[0] if resp else None
 
-def get_household(user: model.AppUser) -> model.Household:
-    with Session(model.engine) as s:
-        stmt = select(model.Household).join(model.UserHousehold).where(model.UserHousehold.user_id == user.uuid)
-        resp = s.execute(stmt).first()
-        household = resp[0] if resp else None
-    return household
+
+def get_household(user: model.AppUser) -> Optional[model.Household]:
+    """Get household associated with a user.
+    
+    Args:
+        user: AppUser object
+        
+    Returns:
+        Household object if found, None otherwise
+    """
+    if not user:
+        return None
+    stmt = select(model.Household).join(model.UserHousehold).where(model.UserHousehold.user_id == user.uuid)
+    resp = model.db.session.execute(stmt).first()
+    return resp[0] if resp else None

@@ -4,28 +4,47 @@ import model
 from datetime import datetime
 from dateutil import relativedelta
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-from pytz import timezone
+from typing import Any
 
-def all(household_uuid: str) -> {str, any}:
-  with Session(model.engine) as s:
-    pet_data = s.execute(select(model.Pet).where(model.Pet.household_uuid == household_uuid)).all()
+def all(household_uuid: str) -> list[dict[str, Any]]:
+  """Get all pets for a household.
+  
+  Args:
+    household_uuid: UUID of the household
+    
+  Returns:
+    List of dictionaries containing pet id, name, and age
+  """
+  pet_data = model.db.session.execute(
+    select(model.Pet).where(model.Pet.household_uuid == household_uuid)
+  ).all()
 
-    pets = []
-    for row in pet_data:
-      for pet in row:
-        pets.append(
-            {
-              'id':  pet.uuid,
-              'name': pet.name,
-              'age': age(pet.birthdate)
-            }
-        )
+  pets = []
+  for row in pet_data:
+    for pet in row:
+      pets.append(
+          {
+            'id':  pet.uuid,
+            'name': pet.name,
+            'age': age(pet.birthdate)
+          }
+      )
 
-  return(pets)
+  return pets
 
 def age(birthdate):
-  delta = relativedelta.relativedelta(datetime.now(timezone('America/Los_Angeles')), birthdate)
+  """Calculate and format pet age from birthdate.
+  
+  Args:
+    birthdate: datetime object or None
+    
+  Returns:
+    str: Formatted age string or 'Unknown' if birthdate is None
+  """
+  if birthdate is None:
+    return 'Unknown'
+  
+  delta = relativedelta.relativedelta(datetime.now(model.APP_TIMEZONE), birthdate)
   if delta.years <= 2:
     return('{} months'.format(delta.months + (delta.years * 12)))
 

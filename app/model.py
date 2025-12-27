@@ -8,6 +8,10 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from enum import Enum
 from typing import Any
+from pytz import timezone
+
+# Configuration constants
+APP_TIMEZONE = timezone(os.environ.get('APP_TIMEZONE', 'America/Los_Angeles'))
 
 
 app = Flask(__name__)
@@ -17,7 +21,7 @@ app.config["SESSION_TYPE"] = "filesystem"
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_RECORD_QUERIES'] = True
-app.config['SQLALCHEMY_ECHO'] = True
+app.config['SQLALCHEMY_ECHO'] = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'
 
 Session(app)
 db = SQLAlchemy(app)
@@ -70,64 +74,70 @@ db.Model.registry.update_type_annotation_map(
 #####################################################
 
 class AppUser(db.Model):
-  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
-  name: Mapped[str] = mapped_column(String(64))
-  email: Mapped[str] = mapped_column(String(64), index=True)
-  # households:
+    """User model representing an application user."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    email: Mapped[str] = mapped_column(String(64), index=True)
+    # households:
 
-  def __repr__(self):
-    return "<User %s>" % (self.email)
+    def __repr__(self):
+        return "<User %s>" % (self.email)
 
 class Household(db.Model):
-  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
-  name: Mapped[str] = mapped_column(String(64))
-  email: Mapped[str] = mapped_column(String(64), index=True)
+    """Household model representing a group of users and pets."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64))
+    email: Mapped[str] = mapped_column(String(64), index=True)
 
-  def __repr__(self):
-    return "<User %s>" % (self.email)
+    def __repr__(self):
+        return "<Household %s>" % (self.name)
 
 class Pet(db.Model):
-  uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
-  household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=True)
-  household: Mapped["Household"] = relationship()
-  species: Mapped[Species]
-  name: Mapped[str] = mapped_column(String(64))
-  birthdate: Mapped[datetime] = mapped_column(nullable=True)
-  photo_addr: Mapped[str] = mapped_column(String(64), nullable=True)
+    """Pet model representing a pet in a household."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=True)
+    household: Mapped["Household"] = relationship()
+    species: Mapped[Species]
+    name: Mapped[str] = mapped_column(String(64))
+    birthdate: Mapped[datetime] = mapped_column(nullable=True)
+    photo_addr: Mapped[str] = mapped_column(String(64), nullable=True)
 
-  def __repr__(self):
-    return "<Pet %s>"% (self.name)
+    def __repr__(self):
+        return "<Pet %s>" % (self.name)
 
 
 class UserHousehold(db.Model):
-  id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
-  user_id: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'))
-  user: Mapped["AppUser"] = relationship()
-  household_id: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
-  household: Mapped["Household"] = relationship()
+    """Join table linking users to households (many-to-many relationship)."""
+    id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'))
+    user: Mapped["AppUser"] = relationship()
+    household_id: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
+    household: Mapped["Household"] = relationship()
 
-  def __repr__(self):
-    return "<UserHousehold %s - %s>" % (self.user, self.household)
+    def __repr__(self):
+        return "<UserHousehold %s - %s>" % (self.user, self.household)
 
 
 class Event(db.Model):
-  id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
-  household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=False)
-  household: Mapped["Household"] = relationship()
-  pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
-  pet: Mapped["Pet"] = relationship()
-  timestamp: Mapped[datetime] = mapped_column(nullable=False)
-  type: Mapped[EventType] = mapped_column(nullable=False, index=True)
-  meta: Mapped[dict[str, Any]]
-  created_at: Mapped[datetime] = mapped_column(nullable=False)
-  created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
-  created_by_user: Mapped["AppUser"] = relationship()
+    """Event model representing care activities (feeding, litter, medicine, etc.)."""
+    id: Mapped[int] = mapped_column(Integer, autoincrement=True, primary_key=True)
+    household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=False)
+    household: Mapped["Household"] = relationship()
+    pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
+    pet: Mapped["Pet"] = relationship()
+    timestamp: Mapped[datetime] = mapped_column(nullable=False)
+    type: Mapped[EventType] = mapped_column(nullable=False, index=True)
+    meta: Mapped[dict[str, Any]]
+    created_at: Mapped[datetime] = mapped_column(nullable=False)
+    created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
+    created_by_user: Mapped["AppUser"] = relationship()
 
-  def __repr__(self):
-    return '<Event %s - %s>' % (self.type, self.timestamp)
+    def __repr__(self):
+        return '<Event %s - %s>' % (self.type, self.timestamp)
 
 
-  class FoodMeta(db.Model):
+class FoodMeta(db.Model):
+    """Food metadata model storing nutritional information for food items."""
     uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
     household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
     household: Mapped["Household"] = relationship()
@@ -137,18 +147,26 @@ class Event(db.Model):
     unit: Mapped[Unit] = mapped_column(nullable=False)
     calories: Mapped[int] = mapped_column(Integer)
 
-    def calorie_count(self, amt):
-      return int(self.calories * amt / self.serving_size)
+    def calorie_count(self, amt: float) -> int:
+        """Calculate calories for a given amount of food.
+        
+        Args:
+            amt: Amount of food
+            
+        Returns:
+            Calculated calorie count
+        """
+        return int(self.calories * amt / self.serving_size)
 
     def __repr__(self):
-      return f"<FoodMeta {self.pet.name} - {self.name}>"
+        return f"<FoodMeta {self.name} - {self.type.value}>"
 
 ###############################################################
 
 def connect_to_db(app, db_uri=None):
   """Connect the database to our Flask app."""
   app.config['SQLALCHEMY_DATABASE_URI'] = db_uri or 'postgresql://pettracker'
-  app.config['SQLALCHEMY_ECHO'] = True
+  app.config['SQLALCHEMY_ECHO'] = os.environ.get('SQLALCHEMY_ECHO', 'False').lower() == 'true'
 
   db.app = app
   db.init_app(app)
