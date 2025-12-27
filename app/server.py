@@ -1,5 +1,6 @@
 import os
 import event_helper
+import food_helper
 import model
 import pet_helper
 import user_helper
@@ -83,7 +84,10 @@ def show_events():
         case 'GET':
             try:
                 events = event_helper.all_events()
-                return render_template("events.html", events=events)
+                # Get error or success message from query parameters
+                error = request.args.get('error')
+                created = request.args.get('created')
+                return render_template("events.html", events=events, error=error, created=created)
             except Exception as e:
                 return render_template("events.html", events=[], error="Error loading events")
                 
@@ -94,15 +98,13 @@ def show_events():
             try:
                 ev_type = int(data.get('event-type'))
             except (ValueError, TypeError):
-                return render_template("events.html", events=event_helper.all_events(), 
-                                     error="Invalid event type")
+                return redirect("/events?error=Invalid event type")
 
             # Event time must be in the format YYYY-MM-DDTHH:MM.
             try:
                 event_time = datetime.strptime(data.get('event-time'), '%Y-%m-%dT%H:%M')
             except (ValueError, TypeError):
-                return render_template("events.html", events=event_helper.all_events(), 
-                                     error="Invalid event time")
+                return redirect("/events?error=Invalid event time")
 
             try:
                 event_helper.new(
@@ -112,11 +114,11 @@ def show_events():
                     data=data,
                     timestamp=event_time
                 )
-                events = event_helper.all_events()
-                return render_template("events.html", events=events)
+                # Redirect to GET to prevent double submission on refresh
+                return redirect("/events?created=1")
             except Exception as e:
-                return render_template("events.html", events=event_helper.all_events(), 
-                                     error="Error creating event")
+                # On error, still redirect but with error message
+                return redirect("/events?error=Error creating event")
 
 
 app.route('/events/all', methods=['GET'])
@@ -162,10 +164,11 @@ def new_event():
     try:
         now = datetime.now(tz=model.APP_TIMEZONE)
         pets = pet_helper.all(household.uuid)
-        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets)
+        foods = food_helper.all(household.uuid)
+        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets, foods=foods)
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
-                              pets=[], error="Error loading form")
+                              pets=[], foods=[], error="Error loading form")
 
 
 @app.route('/logout')

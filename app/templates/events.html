@@ -3,6 +3,14 @@
    
     <div class="row-fluid">
       <h3>Pet Tracker: Events</h3>
+      {% if error %}
+        <div class="error">{{ error }}</div>
+      {% endif %}
+      {% if created %}
+        <div style="background-color: #d4edda; color: #155724; padding: 12px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+          Event created successfully!
+        </div>
+      {% endif %}
       <div>
         <form action="/events/new" method="get" class="new-event">
           <button>Add Event</button>

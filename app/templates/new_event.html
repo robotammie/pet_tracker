@@ -44,7 +44,14 @@
           <div style="display: flex; gap: 20px;">
             <div class="new-event-field">
               <label for="food-name">Food Name:</label>
-              <input type="text" name="food-name" id="food-name"/>
+              <select name="food-name" id="food-name">
+                <option value="">-- Select or enter new --</option>
+                {% for food in foods %}
+                  <option value="{{ food['name'] }}" data-uuid="{{ food['uuid'] }}">{{ food['name'] }}</option>
+                {% endfor %}
+                <option value="__other__">Other (enter custom name)</option>
+              </select>
+              <input type="text" name="food-name-custom" id="food-name-custom" style="display: none; margin-top: 5px;" placeholder="Enter food name"/>
             </div>
             <div class="new-event-field">
               <label for="food-type">Food Type:</label>
@@ -93,10 +100,114 @@
     </div>
 
     <script>
+      // Store food data for autofill
+      const foodsData = {
+        {% if foods %}
+        {% for food in foods %}
+        "{{ food['name']|replace('"', '\\"') }}": {
+          "type": "{{ food['type'] }}",
+          "serving_size": {{ food['serving_size'] }},
+          "unit": "{{ food['unit'] }}",
+          "calories": {{ food['calories'] }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% endif %}
+      };
+
       // Get all event type radio buttons
       const eventTypeRadios = document.querySelectorAll('input[name="event-type"]');
       const foodFields = document.getElementById('food-fields');
       const medicineFields = document.getElementById('medicine-fields');
+      const foodNameSelect = document.getElementById('food-name');
+      const foodNameCustom = document.getElementById('food-name-custom');
+      const foodTypeSelect = document.getElementById('food-type');
+      const foodAmountInput = document.getElementById('food-amount');
+      const foodUnitSelect = document.getElementById('food-unit');
+      const foodCaloriesInput = document.getElementById('food-calories');
+
+      // Track currently selected food for calorie calculation
+      let currentFoodData = null;
+
+      // Function to get the actual food name (from select or custom input)
+      function getFoodName() {
+        if (foodNameSelect.value === '__other__') {
+          return foodNameCustom.value.trim();
+        }
+        return foodNameSelect.value.trim();
+      }
+
+      // Function to show/hide custom food name input
+      function toggleCustomFoodInput() {
+        if (foodNameSelect.value === '__other__') {
+          foodNameCustom.style.display = 'block';
+          foodNameCustom.required = true;
+          foodNameSelect.removeAttribute('name'); // Remove name so custom input is submitted
+          foodNameCustom.setAttribute('name', 'food-name');
+        } else {
+          foodNameCustom.style.display = 'none';
+          foodNameCustom.required = false;
+          foodNameCustom.removeAttribute('name');
+          foodNameSelect.setAttribute('name', 'food-name');
+        }
+      }
+
+      // Function to autofill food fields when an existing food is selected
+      function autofillFoodFields() {
+        toggleCustomFoodInput();
+        const foodName = getFoodName();
+        
+        if (foodName && foodsData[foodName]) {
+          const food = foodsData[foodName];
+          currentFoodData = food; // Store for calorie calculation
+          foodTypeSelect.value = food.type;
+          foodAmountInput.value = food.serving_size;
+          foodUnitSelect.value = food.unit;
+          foodCaloriesInput.value = food.calories;
+        } else {
+          currentFoodData = null;
+          // If switching to "Other" or selecting empty, clear autofilled fields
+          if (foodNameSelect.value === '__other__' || foodNameSelect.value === '') {
+            // Don't clear if user is typing in custom field and it might match
+            if (foodNameSelect.value === '__other__' && foodNameCustom.value.trim() === '') {
+              foodTypeSelect.value = '';
+              foodAmountInput.value = '';
+              foodUnitSelect.value = '';
+              foodCaloriesInput.value = '';
+            }
+          } else if (foodNameSelect.value !== '') {
+            // Selected a food from dropdown but it's not in foodsData (shouldn't happen, but handle it)
+            foodTypeSelect.value = '';
+            foodAmountInput.value = '';
+            foodUnitSelect.value = '';
+            foodCaloriesInput.value = '';
+          }
+        }
+      }
+
+      // Function to calculate calories based on amount
+      function calculateCalories() {
+        if (!currentFoodData) return;
+        
+        const amount = parseFloat(foodAmountInput.value);
+        if (isNaN(amount) || amount <= 0) {
+          return;
+        }
+
+        const servingSize = currentFoodData.serving_size;
+        const caloriesPerServing = currentFoodData.calories;
+        
+        // Calculate: (amount / serving_size) * calories_per_serving
+        const calculatedCalories = (amount / servingSize) * caloriesPerServing;
+        foodCaloriesInput.value = Math.round(calculatedCalories);
+      }
+
+      // Listen for changes on food name select
+      foodNameSelect.addEventListener('change', autofillFoodFields);
+      // Listen for input on custom food name
+      foodNameCustom.addEventListener('input', autofillFoodFields);
+      // Listen for changes on food amount to recalculate calories
+      foodAmountInput.addEventListener('input', calculateCalories);
+      foodAmountInput.addEventListener('change', calculateCalories);
 
       // Function to toggle food fields visibility
       function toggleFields() {
@@ -113,6 +224,7 @@
 
       // Check initial state on page load
       toggleFields();
+      toggleCustomFoodInput();
     </script>
 
 {% endblock %}
