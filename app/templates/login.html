@@ -3,6 +3,9 @@
    
     <div class="row-fluid">
       <h3>Pet Tracker: Login</h3>
+      {% if error %}
+        <div style="color: red; margin-bottom: 10px;">{{ error }}</div>
+      {% endif %}
       <form action="/" method="post" class="login">
         <div class="login-field">
           Email:

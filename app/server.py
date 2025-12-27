@@ -17,16 +17,28 @@ def load_user_and_household():
     
     This function runs before every request to ensure user and household
     data is available. If no email is in session, redirects to login.
+    Handles login POST requests by setting session email from form data.
     """
+    # Handle login POST request
+    if request.method == 'POST' and request.path == '/' and not session.get('email'):
+        email = request.form.get('email', '').strip()
+        if email:
+            session['email'] = email
+        else:
+            return render_template("login.html", error="Please enter an email address")
+    
+    # If still no email in session, show login page
     if not session.get('email'):
         return render_template("login.html")
 
     session['user'] = user_helper.get_user(session.get('email', None))
     if not session.get('user'):
-        return render_template("login.html")
+        session.pop('email', None)  # Clear invalid email from session
+        return render_template("login.html", error="User not found")
     
     session['household'] = user_helper.get_household(session.get('user'))
     if not session.get('household'):
+        session.pop('email', None)  # Clear email if no household
         return render_template("login.html", error="No household found for user")
 
 #####################################################
@@ -36,12 +48,17 @@ def home():
     """Homepage route.
     
     GET: show all pets for the household
-    POST: create a new pet (not yet implemented)
+    POST: handle login (redirects to GET) or create a new pet (not yet implemented)
     """
     household = session.get('household')
     if not household:
         return redirect("/")
     
+    # If POST is a login request (handled by before_request), redirect to GET to show homepage
+    if request.method == 'POST' and request.form.get('email'):
+        return redirect("/")
+    
+    # GET request or POST for creating pet
     try:
         pets = pet_helper.all(household.uuid)
         return render_template("homepage.html", pets=pets)
