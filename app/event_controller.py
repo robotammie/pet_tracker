@@ -1,6 +1,6 @@
 import model
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import session
 from sqlalchemy import select
 from typing import Any, Optional
@@ -23,7 +23,7 @@ def _create_event_base(household_uuid: str, created_by: str, event_type: model.E
     now = datetime.now(tz=model.APP_TIMEZONE)
     event = model.Event()
     event.household_uuid = household_uuid
-    event.pet_uuid = data.get('pet') or None
+    event.pet_uuid = data.get('pet') if event_type in [model.EventType.Food, model.EventType.Medicine] else None
     event.timestamp = timestamp or now
     event.type = event_type
     event.created_at = now
@@ -121,6 +121,49 @@ def all_events() -> list[dict[str, Any]]:
                 'type': event.type.name,
                 'meta': event.meta,
             })
+    
+    return events
+
+def summary() -> list[dict[str, Any]]:
+    """Get a summary of events for the current user's household.
+    
+    Returns:
+        List of dictionaries containing event information
+    """
+    if not session.get('user') or not session.get('household'):
+        return []
+    
+    household_uuid = session.get('household').uuid
+    event_data = model.db.session.execute(
+        select(model.Event.type, model.Pet.name, model.Event.timestamp, model.Event.meta)
+        .distinct(model.Event.type, model.Event.pet_uuid)
+        .join(model.Pet, isouter=True)
+        .order_by(model.Event.type, model.Event.pet_uuid, model.Event.timestamp.desc())
+        .where(model.Event.household_uuid == household_uuid)
+    ).all()
+
+    events = []
+    for row in event_data:
+        delta = datetime.now(tz=model.APP_TIMEZONE) - row.timestamp
+        if delta.days > 29:
+            time_ago = "weeks ago"
+        elif delta.days > 7:
+            time_ago = f"{delta.days // 7} weeks ago"
+        elif delta.days > 0:
+            time_ago = f"{delta.days} days ago"
+        elif delta.seconds > 3600:
+            time_ago = f"{delta.seconds // 3600} hours ago"
+        elif delta.seconds > 60:
+            time_ago = f"{delta.seconds // 60} minutes ago"
+        else:
+            time_ago = f"{delta.seconds} seconds ago"
+
+        events.append({
+            'type': row.type.name,
+            'pet': row.name if row.name else '',
+            'time_ago': time_ago,
+            'meta': row.meta,
+        })
     
     return events
 

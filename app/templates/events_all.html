@@ -18,24 +18,24 @@
       </div>
       <table>
         <tr>
-          <th>Type</th>
           <th>Pet</th>
+          <th>Type</th>
           <th>Meta</th>
-          <th></th>
+          <th>Timestamp</th>
         </tr>
         {% for event in events %}
           <tr>
             <td>
-              {{ event['type'] }}
+              {{ event['pet'] }}
             </td>
             <td>
-              {{ event['pet'] }}
+              {{ event['type'] }}
             </td>
             <td>
               {{ event['meta'] }}
             </td>
             <td>
-              {{ event['time_ago'] }}
+              {{ event['timestamp'] }}
             </td>
           </tr>
         {% endfor %}

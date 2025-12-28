@@ -1,5 +1,5 @@
 import os
-import event_helper
+import event_controller
 import food_helper
 import model
 import pet_helper
@@ -83,7 +83,7 @@ def show_events():
     match request.method:
         case 'GET':
             try:
-                events = event_helper.all_events()
+                events = event_controller.summary()
                 # Get error or success message from query parameters
                 error = request.args.get('error')
                 created = request.args.get('created')
@@ -107,7 +107,7 @@ def show_events():
                 return redirect("/events?error=Invalid event time")
 
             try:
-                event_helper.new(
+                event_controller.new(
                     household_uuid=household.uuid,
                     event_type=model.EventType(ev_type),
                     created_by=user.uuid,
@@ -127,11 +127,8 @@ def show_events():
   GET: show all events
   """
   user = session.get('user')
-  match request.method:
-    case 'GET':
-      events = event_helper.all_events()
-  
-  return render_template("events.html", events=events)
+  events = event_controller.all_events()
+  return render_template("events_all.html", events=events)
 
 
 @app.route('/events/day', methods=['GET'])
@@ -145,7 +142,7 @@ def show_events_day():
         return redirect("/")
     
     try:
-        events = event_helper.day_view(datetime.now(tz=model.APP_TIMEZONE))
+        events = event_controller.day_view(datetime.now(tz=model.APP_TIMEZONE))
         return render_template("events_day.html", events=events)
     except Exception as e:
         return render_template("events_day.html", events={}, error="Error loading day view")
