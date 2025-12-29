@@ -18,21 +18,30 @@
       </div>
       <table>
         <tr>
-          <th>Pet</th>
           <th>Type</th>
+          <th>Pet</th>
           <th>Meta</th>
           <th>Timestamp</th>
         </tr>
         {% for event in events %}
           <tr>
             <td>
-              {{ event['pet'] }}
+              <img src="/assets/{{ event['type'] }}Icon.svg" alt="{{ event['type'] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
             </td>
             <td>
-              <img src="/assets/{{ event['type'] }}Icon.svg" alt="{{ event['type'] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
+              {%if event['pet-name'] %}
+                <img src="/{{ event['pet-icon'] }}" alt="{{ event['pet-name'] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
+              {% endif %}
+            </td>
+            <td>
               {{ event['meta'] }}
+            </td>
+            <td>
               {{ event['timestamp'] }}
             </td>
           </tr>
         {% endfor %}
       </table>
+    </div>
+
+{% endblock %}

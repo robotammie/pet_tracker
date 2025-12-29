@@ -117,7 +117,8 @@ def all_events() -> list[dict[str, Any]]:
         for event in row:
             events.append({
                 'timestamp': event.timestamp,
-                'pet': event.pet.name if event.pet_uuid and event.pet else '',
+                'pet-name': event.pet.name if event.pet_uuid and event.pet else '',
+                'pet-icon': event.pet.photo_addr if event.pet_uuid and event.pet and event.pet.photo_addr else '',
                 'type': event.type.name,
                 'meta': event.meta,
             })
@@ -135,7 +136,7 @@ def summary() -> list[dict[str, Any]]:
     
     household_uuid = session.get('household').uuid
     event_data = model.db.session.execute(
-        select(model.Event.type, model.Pet.name, model.Event.timestamp, model.Event.meta)
+        select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.timestamp, model.Event.meta)
         .distinct(model.Event.type, model.Event.pet_uuid)
         .join(model.Pet, isouter=True)
         .order_by(model.Event.type, model.Event.pet_uuid, model.Event.timestamp.desc())
@@ -160,7 +161,8 @@ def summary() -> list[dict[str, Any]]:
 
         events.append({
             'type': row.type.name,
-            'pet': row.name if row.name else '',
+            'pet-name': row.name if row.name else '',
+            'pet-icon': row.photo_addr if row.photo_addr else '',
             'time_ago': time_ago,
             'meta': row.meta,
         })
@@ -183,7 +185,7 @@ def day_view(date: datetime) -> dict[str, Any]:
     start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
     
-    query = (select(model.Event.type, model.Pet.name, model.Event.meta)
+    query = (select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.meta)
              .join(model.Pet, isouter=True)
              .where(model.Event.household_uuid == household_uuid)
              .where(model.Event.timestamp >= start_date)
@@ -192,7 +194,7 @@ def day_view(date: datetime) -> dict[str, Any]:
 
     events: dict[str, Any] = {}
     for event_row in events_data:
-        event_type, pet_name, meta = event_row[0], event_row[1], event_row[2]
+        event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
         pet_name = pet_name or ''
         
         match event_type:
@@ -200,15 +202,15 @@ def day_view(date: datetime) -> dict[str, Any]:
                 if 'Food' not in events:
                     events['Food'] = {}
                 calories = float(meta.get('calories', 0)) if meta else 0
-                events['Food'][pet_name] = events['Food'].get(pet_name, 0) + calories
+                events['Food'][(pet_name, pet_icon)] = events['Food'].get((pet_name, pet_icon), 0) + calories
             case model.EventType.Litter:
                 if 'Litter' not in events:
                     events['Litter'] = {}
-                events['Litter'][pet_name] = events['Litter'].get(pet_name, 0) + 1
+                events['Litter'][(pet_name, pet_icon)] = events['Litter'].get((pet_name, pet_icon), 0) + 1
             case model.EventType.Medicine:
                 if 'Medicine' not in events:
                     events['Medicine'] = {}
-                events['Medicine'][pet_name] = events['Medicine'].get(pet_name, 0) + 1
+                events['Medicine'][(pet_name, pet_icon)] = events['Medicine'].get((pet_name, pet_icon), 0) + 1
 
     return events
 

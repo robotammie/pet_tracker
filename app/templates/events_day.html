@@ -15,16 +15,24 @@
           <th>Meta</th>
         </tr>
         {% for type, event in events.items() %}
-          {% for pet, value in event.items() %}
+          {% for pet_data, value in event.items() %}
             <tr>
               <td>
                 <img src="/assets/{{ type }}Icon.svg" alt="{{ type }}" style="width: 50px; height: 50px; vertical-align: middle;" />
               </td>
               <td>
-                {{ pet }}
+                {%if pet_data[0] %}
+                  <img src="/{{ pet_data[1] }}" alt="{{ pet_data[0] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
+                {% endif %}
               </td>
               <td>
-                {{ value }}
+                {%if type == 'Food' %}
+                  {{ value }} calories
+                {% elif type == 'Litter' %}
+                  {{ value }} times
+                {% elif type == 'Medicine' %}
+                  {{ value }} times
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
