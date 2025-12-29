@@ -6,7 +6,7 @@ import pet_helper
 import user_helper
 
 from datetime import datetime
-from flask import redirect, render_template, request, session
+from flask import redirect, render_template, request, session, send_from_directory
 from urllib.parse import quote
 
 
@@ -159,8 +159,8 @@ def show_events():
                 return redirect("/events?error=Error creating event")
 
 
-app.route('/events/all', methods=['GET'])
-def show_events():
+@app.route('/events/all', methods=['GET'])
+def show_events_all():
   """
   GET: show all events
   """
@@ -214,6 +214,14 @@ def logout():
     """
     session.clear()
     return redirect("/")
+
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    """Serve static assets from the assets folder."""
+    import os
+    assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
+    return send_from_directory(assets_dir, filename)
 
 
 ########################

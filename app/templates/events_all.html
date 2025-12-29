@@ -29,17 +29,10 @@
               {{ event['pet'] }}
             </td>
             <td>
-              {{ event['type'] }}
-            </td>
-            <td>
+              <img src="/assets/{{ event['type'] }}Icon.svg" alt="{{ event['type'] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
               {{ event['meta'] }}
-            </td>
-            <td>
               {{ event['timestamp'] }}
             </td>
           </tr>
         {% endfor %}
       </table>
-    </div>
-
-{% endblock %}
