@@ -7,6 +7,7 @@ import user_helper
 
 from datetime import datetime
 from flask import redirect, render_template, request, session
+from urllib.parse import quote
 
 
 app = model.app
@@ -106,6 +107,37 @@ def show_events():
             except (ValueError, TypeError):
                 return redirect("/events?error=Invalid event time")
 
+            # If save-food checkbox is checked and this is a food event, save the food
+            food_save_error = None
+            if ev_type == model.EventType.Food.value and data.get('save-food'):
+                food_name = data.get('food-name', '').strip()
+                food_type = data.get('food-type', '').strip()
+                food_amount = data.get('food-amount', '').strip()
+                food_unit = data.get('food-unit', '').strip()
+                food_calories = data.get('food-calories', '').strip()
+
+                # Validate food data before saving
+                if food_name and food_type and food_amount and food_unit and food_calories:
+                    # Check if food with same name already exists
+                    if food_helper.exists(household.uuid, food_name):
+                        food_save_error = f"Food '{food_name}' already exists and was not saved"
+                    else:
+                        try:
+                            serving_size = float(food_amount)
+                            calories = int(food_calories)
+                            if serving_size > 0 and calories > 0:
+                                food_helper.create(
+                                    household_uuid=household.uuid,
+                                    name=food_name,
+                                    food_type=food_type,
+                                    serving_size=serving_size,
+                                    unit=food_unit,
+                                    calories=calories
+                                )
+                        except (ValueError, TypeError):
+                            # If food data is invalid, continue without saving food
+                            pass
+
             try:
                 event_controller.new(
                     household_uuid=household.uuid,
@@ -115,9 +147,15 @@ def show_events():
                     timestamp=event_time
                 )
                 # Redirect to GET to prevent double submission on refresh
+                # Include food save error if one occurred
+                if food_save_error:
+                    return redirect(f"/events?created=1&error={quote(food_save_error)}")
                 return redirect("/events?created=1")
             except Exception as e:
                 # On error, still redirect but with error message
+                # Include food save error if one occurred
+                if food_save_error:
+                    return redirect(f"/events?error={quote(f'Error creating event: {food_save_error}')}")
                 return redirect("/events?error=Error creating event")
 
 
