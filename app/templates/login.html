@@ -6,12 +6,12 @@
       {% if error %}
         <div class="error">{{ error }}</div>
       {% endif %}
-      <form action="/" method="post" class="login">
+      <form action="/" method="post" class="login" aria-label="Login form">
         <div class="login-field">
           <label for="email">Email:</label>
-          <input type="text" name="email" id="email"/>
+          <input type="text" name="email" id="email" aria-label="Enter your email address" autocomplete="email" required/>
         </div>
-        <button>Log in</button>
+        <button type="submit" aria-label="Log in to your account">Log in</button>
       </form>
     </div>
 

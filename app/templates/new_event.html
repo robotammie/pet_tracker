@@ -3,28 +3,28 @@
    
     <div class="row-fluid">
       <h3>Pet Tracker: New Event</h3>
-      <form action="/events" method="post" class="new-event">
-        <div class="new-event-field">
-          <label>Event Type:</label>
-          <div style="display: flex; gap: 20px; margin-top: 5px;">
+      <form action="/events" method="post" class="new-event" aria-label="Create new event form">
+        <fieldset>
+          <legend>Event Type:</legend>
+          <div style="display: flex; gap: 20px; margin-top: 5px;" role="radiogroup" aria-label="Select event type">
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="1" id="event-type-food" required />
+              <input type="radio" name="event-type" value="1" id="event-type-food" required aria-label="Food event type" />
               Food
             </label>
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="2" id="event-type-litter" required />
+              <input type="radio" name="event-type" value="2" id="event-type-litter" required aria-label="Litter event type" />
               Litter
             </label>
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="radio" name="event-type" value="3" id="event-type-medicine" required />
+              <input type="radio" name="event-type" value="3" id="event-type-medicine" required aria-label="Medicine event type" />
               Medicine
             </label>
           </div>
-        </div>
+        </fieldset>
         <div class="new-event-field">
           <label for="pet">Pet:</label>
-          <select name="pet" id="pet" disabled=false>
-            <option value=""></option>
+          <select name="pet" id="pet" disabled=false aria-label="Select pet for this event">
+            <option value="">None</option>
             {% for pet in pets %}
             <option value="{{ pet['id'] }}">{{ pet['name'] }}</option>
             {% endfor %}
@@ -32,25 +32,25 @@
         </div>
         <div class="new-event-field">
           <label for="event-time">Event Date & Time:</label>
-          <input type="datetime-local" name="event-time" id="event-time" value="{{ now }}" required />
+          <input type="datetime-local" name="event-time" id="event-time" value="{{ now }}" required aria-label="Event date and time" />
         </div>
         <div id="food-fields" style="display: none;">
           <div style="display: flex; gap: 20px;">
             <div class="new-event-field">
               <label for="food-name">Food Name:</label>
-              <select name="food-name" id="food-name">
+              <select name="food-name" id="food-name" aria-label="Select food name or choose to enter custom">
                 <option value="">-- Select or enter new --</option>
                 {% for food in foods %}
                   <option value="{{ food['name'] }}" data-uuid="{{ food['uuid'] }}">{{ food['name'] }}</option>
                 {% endfor %}
                 <option value="__other__">Other (enter custom name)</option>
               </select>
-              <input type="text" name="food-name-custom" id="food-name-custom" style="display: none; margin-top: 5px;" placeholder="Enter food name"/>
+              <input type="text" name="food-name-custom" id="food-name-custom" style="display: none; margin-top: 5px;" placeholder="Enter food name" aria-label="Enter custom food name"/>
             </div>
             <div class="new-event-field">
               <label for="food-type">Food Type:</label>
-              <select name="food-type" id="food-type">
-                <option value=""></option>
+              <select name="food-type" id="food-type" aria-label="Select food type">
+                <option value="">None</option>
                 <option value="wet">Wet</option>
                 <option value="dry">Dry</option>
                 <option value="treats">Treats</option>
@@ -61,12 +61,12 @@
           <div style="display: flex; gap: 20px;">
             <div class="new-event-field">
               <label for="food-amount">Food Amount:</label>
-              <input type="text" name="food-amount" id="food-amount"/>
+              <input type="text" name="food-amount" id="food-amount" aria-label="Enter food amount"/>
             </div>
             <div class="new-event-field">
               <label for="food-unit">Food Unit:</label>
-              <select name="food-unit" id="food-unit">
-                <option value=""></option>
+              <select name="food-unit" id="food-unit" aria-label="Select food unit">
+                <option value="">None</option>
                 <option value="grams">Grams</option>
                 <option value="cups">Cups</option>
                 <option value="oz">Ounces</option>
@@ -76,11 +76,11 @@
           </div>
           <div class="new-event-field">
             <label for="food-calories">Food Calories:</label>
-            <input type="text" name="food-calories" id="food-calories"/>
+            <input type="text" name="food-calories" id="food-calories" aria-label="Enter food calories"/>
           </div>
           <div class="new-event-field">
             <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="checkbox" name="save-food" id="save-food" value="1" padding-right="10px"/>
+              <input type="checkbox" name="save-food" id="save-food" value="1" padding-right="10px" aria-label="Save this food for future use"/>
               Save Food
             </label>
           </div>
@@ -88,14 +88,14 @@
         <div id="medicine-fields" style="display: none;">
           <div class="new-event-field">
             <label for="medicine-name">Medicine Name:</label>
-            <input type="text" name="medicine-name" id="medicine-name"/>
+            <input type="text" name="medicine-name" id="medicine-name" aria-label="Enter medicine name"/>
           </div>
           <div class="new-event-field">
             <label for="medicine-dose">Medicine Dose:</label>
-            <input type="text" name="medicine-dose" id="medicine-dose"/>
+            <input type="text" name="medicine-dose" id="medicine-dose" aria-label="Enter medicine dose"/>
           </div>
         </div>
-        <button>Create</button>
+        <button type="submit" aria-label="Create new event">Create</button>
       </form>
     </div>
 

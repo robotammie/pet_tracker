@@ -1,9 +1,10 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <title>Pet Tracker</title>
   <!-- <link rel="shortcut icon" href="static/img/favicon.ico"> -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
   <style>
     * {
       margin: 0;
@@ -200,15 +201,15 @@
   </style>
 </head>
 
-<body>
-  <div class="nav-bar">
+<body role="document">
+  <nav class="nav-bar" role="navigation" aria-label="Main navigation">
     <form action="/logout" method="get" class="logout">
-      <button>Log Out</button>
+      <button type="submit" aria-label="Log out of your account">Log Out</button>
     </form>
     <form action="/" method="get" class="home">
-      <button>Home</button>
+      <button type="submit" aria-label="Go to homepage">Home</button>
     </form>
-  </div>
+  </nav>
 
   {% block content %} put your content here {% endblock %}
 </body>

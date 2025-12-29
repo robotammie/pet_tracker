@@ -4,15 +4,18 @@
     <div class="row-fluid">
       <h3>Pet Tracker</h3>
       <form action="/events" method="get" class="events">
-        <button>Events</button>
+        <button type="submit" aria-label="View all events">Events</button>
       </form>
-      <table>
-        <tr>
-          <th>Name</th>
-          <th>Age</th>
-          <th></th>
-          <th></th>
-        </tr>
+      <table role="table" aria-label="Pets table">
+        <thead>
+          <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Age</th>
+            <th scope="col"></th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
         {% for pet in pets %}
           <tr>
             <td>
@@ -27,6 +30,7 @@
             </td>
           </tr>
         {% endfor %}
+        </tbody>
       </table>
     </div>
 

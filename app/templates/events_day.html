@@ -5,24 +5,27 @@
       <h3>Pet Tracker: Events</h3>
       <div>
         <form action="/events/new" method="get" class="new-event">
-          <button>Add Event</button>
+          <button type="submit" aria-label="Add new event">Add Event</button>
         </form>
       </div>
-      <table>
-        <tr>
-          <th>Type</th>
-          <th>Pet</th>
-          <th>Meta</th>
-        </tr>
+      <table role="table" aria-label="Daily events summary table">
+        <thead>
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Pet</th>
+            <th scope="col">Meta</th>
+          </tr>
+        </thead>
+        <tbody>
         {% for type, event in events.items() %}
           {% for pet_data, value in event.items() %}
             <tr>
               <td>
-                <img src="/assets/{{ type }}Icon.svg" alt="{{ type }}" style="width: 50px; height: 50px; vertical-align: middle;" />
+                <img src="/assets/{{ type }}Icon.svg" alt="{{ type }}" title="{{ type }}" aria-label="{{ type }} event type icon" style="width: 50px; height: 50px; vertical-align: middle;" />
               </td>
               <td>
                 {%if pet_data[0] %}
-                  <img src="/{{ pet_data[1] }}" alt="{{ pet_data[0] }}" style="width: 50px; height: 50px; vertical-align: middle;" />
+                  <img src="/{{ pet_data[1] }}" alt="{{ pet_data[0] }}" title="{{ pet_data[0] }}" aria-label="{{ pet_data[0] }} pet icon" style="width: 50px; height: 50px; vertical-align: middle;" />
                 {% endif %}
               </td>
               <td>
@@ -37,6 +40,7 @@
             </tr>
           {% endfor %}
         {% endfor %}
+        </tbody>
       </table>
     </div>
 
