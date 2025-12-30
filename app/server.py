@@ -1,9 +1,9 @@
 import os
-import event_controller
-import food_helper
+import events
+import foods
 import model
-import pet_helper
-import user_helper
+import pets
+import users
 
 from datetime import datetime
 from flask import redirect, render_template, request, session, send_from_directory, jsonify
@@ -37,12 +37,12 @@ def load_user_and_household():
     if not session.get('email'):
         return render_template("login.html")
 
-    session['user'] = user_helper.get_user(session.get('email', None))
+    session['user'] = users.get_user(session.get('email', None))
     if not session.get('user'):
         session.pop('email', None)  # Clear invalid email from session
         return render_template("login.html", error="User not found")
     
-    session['household'] = user_helper.get_household(session.get('user'))
+    session['household'] = users.get_household(session.get('user'))
     if not session.get('household'):
         session.pop('email', None)  # Clear email if no household
         return render_template("login.html", error="No household found for user")
@@ -69,13 +69,13 @@ def show_events():
     match request.method:
         case 'GET':
             try:
-                events = event_controller.summary()
-                pets = pet_helper.all(household.uuid)
+                events_data = events.summary()
+                pets_data = pets.all(household.uuid)
                 household_name = household.name
                 # Get error or success message from query parameters
                 error = request.args.get('error')
                 created = request.args.get('created')
-                return render_template("events.html", events=events, pets=pets, household_name=household_name, error=error, created=created)
+                return render_template("events.html", events=events_data, pets=pets_data, household_name=household_name, error=error, created=created)
             except Exception as e:
                 return render_template("events.html", events=[], pets=[], household_name="", error="Error loading events")
                 
@@ -106,14 +106,14 @@ def show_events():
                 # Validate food data before saving
                 if food_name and food_type and food_amount and food_unit and food_calories:
                     # Check if food with same name already exists
-                    if food_helper.exists(household.uuid, food_name):
+                    if foods.exists(household.uuid, food_name):
                         food_save_error = f"Food '{food_name}' already exists and was not saved"
                     else:
                         try:
                             serving_size = float(food_amount)
                             calories = int(food_calories)
                             if serving_size > 0 and calories > 0:
-                                food_helper.create(
+                                foods.create(
                                     household_uuid=household.uuid,
                                     name=food_name,
                                     food_type=food_type,
@@ -126,7 +126,7 @@ def show_events():
                             pass
 
             try:
-                event_controller.new(
+                events.new(
                     household_uuid=household.uuid,
                     event_type=model.EventType(ev_type),
                     created_by=user.uuid,
@@ -158,12 +158,12 @@ def show_events_all():
       return redirect("/")
   
   try:
-      events = event_controller.all_events()
-      pets = pet_helper.all(household.uuid)
+      events_data = events.all_events()
+      pets_data = pets.all(household.uuid)
       household_name = household.name
       error = request.args.get('error')
       created = request.args.get('created')
-      return render_template("events_all.html", events=events, pets=pets, household_name=household_name, error=error, created=created)
+      return render_template("events_all.html", events=events_data, pets=pets_data, household_name=household_name, error=error, created=created)
   except Exception as e:
       return render_template("events_all.html", events=[], pets=[], household_name="", error="Error loading events")
 
@@ -179,11 +179,11 @@ def show_events_day():
         return redirect("/")
     
     try:
-        pets = pet_helper.all(household.uuid)
+        pets_data = pets.all(household.uuid)
         household_name = household.name
         # Load initial days (first 5 days with data)
-        initial_days = event_controller.days_view(datetime.now(tz=model.APP_TIMEZONE), limit=5)
-        return render_template("events_day.html", days=initial_days, pets=pets, household_name=household_name)
+        initial_days = events.days_view(datetime.now(tz=model.APP_TIMEZONE), limit=5)
+        return render_template("events_day.html", days=initial_days, pets=pets_data, household_name=household_name)
     except Exception as e:
         return render_template("events_day.html", days=[], pets=[], household_name="", error="Error loading day view")
 
@@ -213,7 +213,7 @@ def api_events_days():
         # Get limit from query params, default to 5
         limit = int(request.args.get('limit', 5))
         
-        days = event_controller.days_view(start_date, limit=limit)
+        days = events.days_view(start_date, limit=limit)
         return jsonify({'days': days})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -231,9 +231,9 @@ def new_event():
     
     try:
         now = datetime.now(tz=model.APP_TIMEZONE)
-        pets = pet_helper.all(household.uuid)
-        foods = food_helper.all(household.uuid)
-        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets, foods=foods)
+        pets_data = pets.all(household.uuid)
+        foods_data = foods.all(household.uuid)
+        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets_data, foods=foods_data)
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
                               pets=[], foods=[], error="Error loading form")
@@ -252,8 +252,8 @@ def home():
 
     # GET request or POST for creating pet
     try:
-        pets = pet_helper.all(household.uuid)
-        return render_template("homepage.html", household_name=household.name, pets=pets)
+        pets_data = pets.all(household.uuid)
+        return render_template("homepage.html", household_name=household.name, pets=pets_data)
     except Exception as e:
         return render_template("homepage.html", pets=[], household_name=household.get('name', ''), error="Error loading pets")
 

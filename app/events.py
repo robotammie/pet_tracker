@@ -105,17 +105,17 @@ def all_events() -> list[dict[str, Any]]:
         return []
     
     household_uuid = session.get('household').uuid
-    event_data = model.db.session.execute(
+    events_raw = model.db.session.execute(
         select(model.Event)
         .join(model.Pet, isouter=True)
         .order_by(model.Event.timestamp.desc())
         .where(model.Event.household_uuid == household_uuid)
     ).all()
 
-    events = []
-    for row in event_data:
+    event_data = []
+    for row in events_raw:
         for event in row:
-            events.append({
+            event_data.append({
                 'timestamp': event.timestamp,
                 'pet-name': event.pet.name if event.pet_uuid and event.pet else '',
                 'pet-icon': event.pet.photo_addr if event.pet_uuid and event.pet and event.pet.photo_addr else '',
@@ -123,7 +123,7 @@ def all_events() -> list[dict[str, Any]]:
                 'meta': event.meta,
             })
     
-    return events
+    return event_data
 
 def summary() -> list[dict[str, Any]]:
     """Get a summary of events for the current user's household.
@@ -135,7 +135,7 @@ def summary() -> list[dict[str, Any]]:
         return []
     
     household_uuid = session.get('household').uuid
-    event_data = model.db.session.execute(
+    events_raw = model.db.session.execute(
         select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.timestamp, model.Event.meta)
         .distinct(model.Event.type, model.Event.pet_uuid)
         .join(model.Pet, isouter=True)
@@ -143,8 +143,8 @@ def summary() -> list[dict[str, Any]]:
         .where(model.Event.household_uuid == household_uuid)
     ).all()
 
-    events = []
-    for row in event_data:
+    event_data = []
+    for row in events_raw:
         delta = datetime.now(tz=model.APP_TIMEZONE) - row.timestamp
         if delta.days > 29:
             time_ago = "weeks ago"
@@ -159,7 +159,7 @@ def summary() -> list[dict[str, Any]]:
         else:
             time_ago = f"{delta.seconds} seconds ago"
 
-        events.append({
+        event_data.append({
             'type': row.type.name,
             'pet-name': row.name if row.name else '',
             'pet-icon': row.photo_addr if row.photo_addr else '',
@@ -167,7 +167,7 @@ def summary() -> list[dict[str, Any]]:
             'meta': row.meta,
         })
     
-    return events
+    return event_data
 
 def day_view(date: datetime) -> dict[str, Any]:
     """Get aggregated events for a specific day.
@@ -190,29 +190,29 @@ def day_view(date: datetime) -> dict[str, Any]:
              .where(model.Event.household_uuid == household_uuid)
              .where(model.Event.timestamp >= start_date)
              .where(model.Event.timestamp < end_date))
-    events_data = model.db.session.execute(query).all()
+    events_raw = model.db.session.execute(query).all()
 
-    events: dict[str, Any] = {}
-    for event_row in events_data:
+    event_data: dict[str, Any] = {}
+    for event_row in events_raw:
         event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
         pet_name = pet_name or ''
         
         match event_type:
             case model.EventType.Food:
-                if 'Food' not in events:
-                    events['Food'] = {}
+                if 'Food' not in event_data:
+                    event_data['Food'] = {}
                 calories = float(meta.get('calories', 0)) if meta else 0
-                events['Food'][(pet_name, pet_icon)] = events['Food'].get((pet_name, pet_icon), 0) + calories
+                event_data['Food'][(pet_name, pet_icon)] = event_data['Food'].get((pet_name, pet_icon), 0) + calories
             case model.EventType.Litter:
-                if 'Litter' not in events:
-                    events['Litter'] = {}
-                events['Litter'][(pet_name, pet_icon)] = events['Litter'].get((pet_name, pet_icon), 0) + 1
+                if 'Litter' not in event_data:
+                    event_data['Litter'] = {}
+                event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
             case model.EventType.Medicine:
-                if 'Medicine' not in events:
-                    events['Medicine'] = {}
-                events['Medicine'][(pet_name, pet_icon)] = events['Medicine'].get((pet_name, pet_icon), 0) + 1
+                if 'Medicine' not in event_data:
+                    event_data['Medicine'] = {}
+                event_data['Medicine'][(pet_name, pet_icon)] = event_data['Medicine'].get((pet_name, pet_icon), 0) + 1
 
-    return events
+    return event_data
 
 
 def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
@@ -247,42 +247,42 @@ def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
                  .where(model.Event.household_uuid == household_uuid)
                  .where(model.Event.timestamp >= day_start)
                  .where(model.Event.timestamp < day_end))
-        events_data = model.db.session.execute(query).all()
+        events_raw = model.db.session.execute(query).all()
         
         # Only include days that have events
-        if events_data:
-            events: dict[str, Any] = {}
-            for event_row in events_data:
+        if events_raw:
+            event_data: dict[str, Any] = {}
+            for event_row in events_raw:
                 event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
                 pet_name = pet_name or ''
                 
                 match event_type:
                     case model.EventType.Food:
-                        if 'Food' not in events:
-                            events['Food'] = {}
+                        if 'Food' not in event_data:
+                            event_data['Food'] = {}
                         calories = float(meta.get('calories', 0)) if meta else 0
-                        events['Food'][(pet_name, pet_icon)] = events['Food'].get((pet_name, pet_icon), 0) + calories
+                        event_data['Food'][(pet_name, pet_icon)] = event_data['Food'].get((pet_name, pet_icon), 0) + calories
                     case model.EventType.Litter:
-                        if 'Litter' not in events:
-                            events['Litter'] = {}
-                        events['Litter'][(pet_name, pet_icon)] = events['Litter'].get((pet_name, pet_icon), 0) + 1
+                        if 'Litter' not in event_data:
+                            event_data['Litter'] = {}
+                        event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
                     case model.EventType.Medicine:
-                        if 'Medicine' not in events:
-                            events['Medicine'] = {}
+                        if 'Medicine' not in event_data:
+                            event_data['Medicine'] = {}
                         # Store medicine name and dose, not just count
                         medicine_key = (pet_name, pet_icon)
-                        if medicine_key not in events['Medicine']:
-                            events['Medicine'][medicine_key] = []
+                        if medicine_key not in event_data['Medicine']:
+                            event_data['Medicine'][medicine_key] = []
                         medicine_info = {
                             'name': meta.get('name', '') if meta else '',
                             'dose': meta.get('dose', '') if meta else ''
                         }
-                        events['Medicine'][medicine_key].append(medicine_info)
+                        event_data['Medicine'][medicine_key].append(medicine_info)
             
             # Convert tuple keys to JSON-serializable format
             # Use a special delimiter that's unlikely to appear in pet names or paths
             serializable_events: dict[str, Any] = {}
-            for event_type, event_data in events.items():
+            for event_type, event_data in event_data.items():
                 serializable_events[event_type] = {}
                 for pet_key, value in event_data.items():
                     # Convert tuple to string key: "pet_name|||pet_icon"
