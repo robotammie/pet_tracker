@@ -167,8 +167,20 @@ def show_events_all():
   GET: show all events
   """
   user = session.get('user')
-  events = event_controller.all_events()
-  return render_template("events_all.html", events=events)
+  household = session.get('household')
+  
+  if not household or not user:
+      return redirect("/")
+  
+  try:
+      events = event_controller.all_events()
+      pets = pet_helper.all(household.uuid)
+      household_name = household.name
+      error = request.args.get('error')
+      created = request.args.get('created')
+      return render_template("events_all.html", events=events, pets=pets, household_name=household_name, error=error, created=created)
+  except Exception as e:
+      return render_template("events_all.html", events=[], pets=[], household_name="", error="Error loading events")
 
 
 @app.route('/events/day', methods=['GET'])
