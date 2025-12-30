@@ -19,10 +19,18 @@
           <span></span>
         </div>
         <div class="hamburger-menu-dropdown" id="menuDropdown">
+          <form action="/" method="get">
+            <button type="submit" aria-label="Home">Home</button>
+          </form>
+          <form action="/events/all" method="get">
+            <button type="submit" aria-label="All Events">All Events</button>
+          </form>
+          <form action="/" method="get">
+            <button type="submit" aria-label="Change Household" disabled>Change Household</button>
+          </form>
           <form action="/logout" method="get">
             <button type="submit" aria-label="Log out">Log Out</button>
           </form>
-          <button type="button" aria-label="Placeholder option">[Placeholder Option]</button>
         </div>
       </div>
     </div>

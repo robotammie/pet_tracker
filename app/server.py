@@ -50,39 +50,20 @@ def load_user_and_household():
 #####################################################
 
 @app.route('/', methods=['GET', 'POST'])
-def home():
-    """Homepage route.
-    
-    GET: show all pets for the household
-    POST: handle login (redirects to GET) or create a new pet (not yet implemented)
-    """
-    household = session.get('household')
-    if not household:
-        return redirect("/")
-    
-    # If POST is a login request (handled by before_request), redirect to GET to show homepage
-    if request.method == 'POST' and request.form.get('email'):
-        return redirect("/")
-    
-    # GET request or POST for creating pet
-    try:
-        pets = pet_helper.all(household.uuid)
-        return render_template("homepage.html", household_name=household.name, pets=pets)
-    except Exception as e:
-        return render_template("homepage.html", pets=[], household_name=household.get('name', ''), error="Error loading pets")
-
-
-@app.route('/events', methods=['GET', 'POST'])
 def show_events():
     """Events route.
     
     GET: show all events for the household
-    POST: create a new event
+    POST: handle login (redirects to GET) or create a new event
     """
     household = session.get('household')
     user = session.get('user')
     
     if not household or not user:
+        return redirect("/")
+
+     # If POST is a login request (handled by before_request), redirect to GET to show homepage
+    if request.method == 'POST' and request.form.get('email'):
         return redirect("/")
     
     match request.method:
@@ -105,13 +86,13 @@ def show_events():
             try:
                 ev_type = int(data.get('event-type'))
             except (ValueError, TypeError):
-                return redirect("/events?error=Invalid event type")
+                return redirect("/?error=Invalid event type")
 
             # Event time must be in the format YYYY-MM-DDTHH:MM.
             try:
                 event_time = datetime.strptime(data.get('event-time'), '%Y-%m-%dT%H:%M')
             except (ValueError, TypeError):
-                return redirect("/events?error=Invalid event time")
+                return redirect("/?error=Invalid event time")
 
             # If save-food checkbox is checked and this is a food event, save the food
             food_save_error = None
@@ -155,14 +136,14 @@ def show_events():
                 # Redirect to GET to prevent double submission on refresh
                 # Include food save error if one occurred
                 if food_save_error:
-                    return redirect(f"/events?created=1&error={quote(food_save_error)}")
-                return redirect("/events?created=1")
+                    return redirect(f"/?created=1&error={quote(food_save_error)}")
+                return redirect("/?created=1")
             except Exception as e:
                 # On error, still redirect but with error message
                 # Include food save error if one occurred
                 if food_save_error:
-                    return redirect(f"/events?error={quote(f'Error creating event: {food_save_error}')}")
-                return redirect("/events?error=Error creating event")
+                    return redirect(f"/?error={quote(f'Error creating event: {food_save_error}')}")
+                return redirect("/?error=Error creating event")
 
 
 @app.route('/events/all', methods=['GET'])
@@ -256,6 +237,25 @@ def new_event():
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
                               pets=[], foods=[], error="Error loading form")
+
+
+@app.route('/pets', methods=['GET', 'POST'])
+def home():
+    """Homepage route.
+    
+    GET: show all pets for the household
+    POST: handle login (redirects to GET) or create a new pet (not yet implemented)
+    """
+    household = session.get('household')
+    if not household:
+        return redirect("/")
+
+    # GET request or POST for creating pet
+    try:
+        pets = pet_helper.all(household.uuid)
+        return render_template("homepage.html", household_name=household.name, pets=pets)
+    except Exception as e:
+        return render_template("homepage.html", pets=[], household_name=household.get('name', ''), error="Error loading pets")
 
 
 @app.route('/logout')
