@@ -85,12 +85,14 @@ def show_events():
         case 'GET':
             try:
                 events = event_controller.summary()
+                pets = pet_helper.all(household.uuid)
+                household_name = household.name
                 # Get error or success message from query parameters
                 error = request.args.get('error')
                 created = request.args.get('created')
-                return render_template("events.html", events=events, error=error, created=created)
+                return render_template("events.html", events=events, pets=pets, household_name=household_name, error=error, created=created)
             except Exception as e:
-                return render_template("events.html", events=[], error="Error loading events")
+                return render_template("events.html", events=[], pets=[], household_name="", error="Error loading events")
                 
         case 'POST':
             data = request.form

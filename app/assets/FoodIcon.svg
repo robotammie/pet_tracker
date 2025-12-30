@@ -13,7 +13,6 @@
       <use xlink:href="#IMAGE_Lightweight" width="512" height="512"></use>
     </pattern>
   </defs>
-  <rect x="447.033" y="191.410" width="66.984" height="66.652" stroke="none" fill="url(#PATTERN_Lightweight)"></rect>
   <g id="Pen" opacity="1.000" display="none">
     <path id="STROKE_c96f3d3c-d47a-40c9-8231-2051c85b692e" opacity="1.000" display="none" fill="none" stroke="#000000" stroke-width="4.846" stroke-opacity="1.000" stroke-linecap="round" stroke-linejoin="round" d="M 237.903 306.189 Q 237.903 306.000 237.903 300.132 Q 237.938 300.132 238.044 300.132 Q 238.414 300.232 239.073 307.216 Q 239.732 314.199 242.827 327.803 Q 243.062 327.557 240.329 321.240 "></path>
     <path id="STROKE_d48fb67e-0761-4ff5-8818-906b9a42262f" opacity="1.000" display="none" fill="none" stroke="#000000" stroke-width="4.846" stroke-opacity="1.000" stroke-linecap="round" stroke-linejoin="round" d="M 226.301 308.394 Q 226.062 308.492 224.587 308.100 Q 223.113 307.708 221.885 306.858 Q 220.657 306.008 222.971 303.232 Q 225.286 300.455 229.192 297.098 Q 233.098 293.742 235.931 291.987 Q 238.764 290.232 241.361 289.117 Q 243.959 288.001 248.158 291.284 "></path>

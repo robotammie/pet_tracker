@@ -26,7 +26,8 @@ def all(household_uuid: str) -> list[dict[str, Any]]:
           {
             'id':  pet.uuid,
             'name': pet.name,
-            'age': age(pet.birthdate)
+            'age': age(pet.birthdate),
+            'photo_addr': pet.photo_addr if pet.photo_addr else ''
           }
       )
 
