@@ -2,23 +2,6 @@
 {% block content %}
 
 <div class="row-fluid">
-  <div class="events-header">
-    <h3>{{ household_name }}</h3>
-    <div class="hamburger-menu">
-      <div class="hamburger-icon" onclick="toggleMenu()" aria-label="Open menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-      <div class="hamburger-menu-dropdown" id="menuDropdown">
-        <form action="/logout" method="get">
-          <button type="submit" aria-label="Log out">Log Out</button>
-        </form>
-        <button type="button" aria-label="Placeholder option">[Placeholder Option]</button>
-      </div>
-    </div>
-  </div>
-
   <div class="pets-section">
     <div class="pets-container">
       {% for pet in pets %}
@@ -104,20 +87,5 @@
   </table>
 </div>
 
-<script>
-  function toggleMenu() {
-    const dropdown = document.getElementById('menuDropdown');
-    dropdown.classList.toggle('show');
-  }
-
-  // Close menu when clicking outside
-  document.addEventListener('click', function(event) {
-    const menu = document.querySelector('.hamburger-menu');
-    const dropdown = document.getElementById('menuDropdown');
-    if (menu && dropdown && !menu.contains(event.target)) {
-      dropdown.classList.remove('show');
-    }
-  });
-</script>
 
 {% endblock %}

@@ -1,6 +1,14 @@
-{% extends 'base.html' %}
-{% block content %}
-   
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Pet Tracker</title>
+  <!-- <link rel="shortcut icon" href="static/img/favicon.ico"> -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+
+<body role="document">
     <div class="row-fluid">
       <h3>Pet Tracker: Login</h3>
       {% if error %}
@@ -14,5 +22,5 @@
         <button type="submit" aria-label="Log in to your account">Log in</button>
       </form>
     </div>
-
-{% endblock %}
+  </body>
+</html>

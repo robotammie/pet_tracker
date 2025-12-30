@@ -67,9 +67,9 @@ def home():
     # GET request or POST for creating pet
     try:
         pets = pet_helper.all(household.uuid)
-        return render_template("homepage.html", pets=pets)
+        return render_template("homepage.html", household_name=household.name, pets=pets)
     except Exception as e:
-        return render_template("homepage.html", pets=[], error="Error loading pets")
+        return render_template("homepage.html", pets=[], household_name=household.get('name', ''), error="Error loading pets")
 
 
 @app.route('/events', methods=['GET', 'POST'])

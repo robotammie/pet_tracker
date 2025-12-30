@@ -5,19 +5,44 @@
   <!-- <link rel="shortcut icon" href="static/img/favicon.ico"> -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/assets/styles.css">
 </head>
 
 <body role="document">
   <nav class="nav-bar" role="navigation" aria-label="Main navigation">
-    <form action="/logout" method="get" class="logout">
-      <button type="submit" aria-label="Log out of your account">Log Out</button>
-    </form>
-    <form action="/" method="get" class="home">
-      <button type="submit" aria-label="Go to homepage">Home</button>
-    </form>
+    <div class="events-header">
+      <h2>{{ household_name }}</h2>
+      <div class="hamburger-menu">
+        <div class="hamburger-icon" onclick="toggleMenu()" aria-label="Open menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="hamburger-menu-dropdown" id="menuDropdown">
+          <form action="/logout" method="get">
+            <button type="submit" aria-label="Log out">Log Out</button>
+          </form>
+          <button type="button" aria-label="Placeholder option">[Placeholder Option]</button>
+        </div>
+      </div>
+    </div>
   </nav>
 
   {% block content %} put your content here {% endblock %}
+  <script>
+    function toggleMenu() {
+      const dropdown = document.getElementById('menuDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+      const menu = document.querySelector('.hamburger-menu');
+      const dropdown = document.getElementById('menuDropdown');
+      if (menu && dropdown && !menu.contains(event.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+  </script>
 </body>
 </html>

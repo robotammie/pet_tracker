@@ -95,20 +95,6 @@
   </table>
 </div>
 
-<script>
-  function toggleMenu() {
-    const dropdown = document.getElementById('menuDropdown');
-    dropdown.classList.toggle('show');
-  }
-
-  // Close menu when clicking outside
-  document.addEventListener('click', function(event) {
-    const menu = document.querySelector('.hamburger-menu');
-    const dropdown = document.getElementById('menuDropdown');
-    if (menu && dropdown && !menu.contains(event.target)) {
-      dropdown.classList.remove('show');
-    }
-  });
-</script>
+<script src="/assets/common.js"></script>
 
 {% endblock %}
