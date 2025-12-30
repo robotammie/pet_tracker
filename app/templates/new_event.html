@@ -6,16 +6,16 @@
       <form action="/events" method="post" class="new-event" aria-label="Create new event form">
         <fieldset>
           <legend>Event Type:</legend>
-          <div style="display: flex; gap: 20px; margin-top: 5px;" role="radiogroup" aria-label="Select event type">
-            <label style="display: flex; align-items: center; font-weight: normal;">
+          <div class="radio-group" role="radiogroup" aria-label="Select event type">
+            <label>
               <input type="radio" name="event-type" value="1" id="event-type-food" required aria-label="Food event type" />
               Food
             </label>
-            <label style="display: flex; align-items: center; font-weight: normal;">
+            <label>
               <input type="radio" name="event-type" value="2" id="event-type-litter" required aria-label="Litter event type" />
               Litter
             </label>
-            <label style="display: flex; align-items: center; font-weight: normal;">
+            <label>
               <input type="radio" name="event-type" value="3" id="event-type-medicine" required aria-label="Medicine event type" />
               Medicine
             </label>
@@ -34,8 +34,8 @@
           <label for="event-time">Event Date & Time:</label>
           <input type="datetime-local" name="event-time" id="event-time" value="{{ now }}" required aria-label="Event date and time" />
         </div>
-        <div id="food-fields" style="display: none;">
-          <div style="display: flex; gap: 20px;">
+        <div id="food-fields" class="hidden">
+          <div class="form-row">
             <div class="new-event-field">
               <label for="food-name">Food Name:</label>
               <select name="food-name" id="food-name" aria-label="Select food name or choose to enter custom">
@@ -45,7 +45,7 @@
                 {% endfor %}
                 <option value="__other__">Other (enter custom name)</option>
               </select>
-              <input type="text" name="food-name-custom" id="food-name-custom" style="display: none; margin-top: 5px;" placeholder="Enter food name" aria-label="Enter custom food name"/>
+              <input type="text" name="food-name-custom" id="food-name-custom" class="hidden" placeholder="Enter food name" aria-label="Enter custom food name"/>
             </div>
             <div class="new-event-field">
               <label for="food-type">Food Type:</label>
@@ -58,7 +58,7 @@
               </select>
             </div>
           </div>
-          <div style="display: flex; gap: 20px;">
+          <div class="form-row">
             <div class="new-event-field">
               <label for="food-amount">Food Amount:</label>
               <input type="text" name="food-amount" id="food-amount" aria-label="Enter food amount"/>
@@ -79,13 +79,13 @@
             <input type="text" name="food-calories" id="food-calories" aria-label="Enter food calories"/>
           </div>
           <div class="new-event-field">
-            <label style="display: flex; align-items: center; font-weight: normal;">
-              <input type="checkbox" name="save-food" id="save-food" value="1" padding-right="10px" aria-label="Save this food for future use"/>
+            <label class="checkbox-label">
+              <input type="checkbox" name="save-food" id="save-food" value="1" aria-label="Save this food for future use"/>
               Save Food
             </label>
           </div>
         </div>
-        <div id="medicine-fields" style="display: none;">
+        <div id="medicine-fields" class="hidden">
           <div class="new-event-field">
             <label for="medicine-name">Medicine Name:</label>
             <input type="text" name="medicine-name" id="medicine-name" aria-label="Enter medicine name"/>
@@ -140,12 +140,12 @@
       // Function to show/hide custom food name input
       function toggleCustomFoodInput() {
         if (foodNameSelect.value === '__other__') {
-          foodNameCustom.style.display = 'block';
+          foodNameCustom.classList.remove('hidden');
           foodNameCustom.required = true;
           foodNameSelect.removeAttribute('name'); // Remove name so custom input is submitted
           foodNameCustom.setAttribute('name', 'food-name');
         } else {
-          foodNameCustom.style.display = 'none';
+          foodNameCustom.classList.add('hidden');
           foodNameCustom.required = false;
           foodNameCustom.removeAttribute('name');
           foodNameSelect.setAttribute('name', 'food-name');
@@ -215,9 +215,17 @@
       // Function to toggle food fields visibility
       function toggleFields() {
         const foodSelected = document.getElementById('event-type-food').checked;
-        foodFields.style.display = foodSelected ? 'block' : 'none';
+        if (foodSelected) {
+          foodFields.classList.remove('hidden');
+        } else {
+          foodFields.classList.add('hidden');
+        }
         const medicineSelected = document.getElementById('event-type-medicine').checked;
-        medicineFields.style.display = medicineSelected ? 'block' : 'none';
+        if (medicineSelected) {
+          medicineFields.classList.remove('hidden');
+        } else {
+          medicineFields.classList.add('hidden');
+        }
       }
 
       // enable/disable pet select based on event type

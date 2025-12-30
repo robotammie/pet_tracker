@@ -21,6 +21,10 @@ def load_user_and_household():
     data is available. If no email is in session, redirects to login.
     Handles login POST requests by setting session email from form data.
     """
+    # Skip authentication for static files and assets
+    if request.path.startswith('/css/') or request.path.startswith('/assets/'):
+        return None
+    
     # Handle login POST request
     if request.method == 'POST' and request.path == '/' and not session.get('email'):
         email = request.form.get('email', '').strip()
@@ -270,6 +274,15 @@ def serve_assets(filename):
     import os
     assets_dir = os.path.join(os.path.dirname(__file__), 'assets')
     return send_from_directory(assets_dir, filename)
+
+
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    """Serve CSS files from the templates folder."""
+    import os
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    templates_dir = os.path.join(app_dir, 'templates')
+    return send_from_directory(templates_dir, filename)
 
 
 ########################
