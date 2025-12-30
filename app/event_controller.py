@@ -215,6 +215,101 @@ def day_view(date: datetime) -> dict[str, Any]:
     return events
 
 
+def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
+    """Get aggregated events for multiple days starting from a given date.
+    
+    Args:
+        start_date: Starting date (will go backwards in time from this date)
+        limit: Maximum number of days to return
+        
+    Returns:
+        List of dictionaries, each containing date and events for that day.
+        Only includes days that have events. Days are ordered from newest to oldest.
+    """
+    if not session.get('household'):
+        return []
+    
+    household_uuid = session.get('household').uuid
+    days_data = []
+    
+    # Start from the given date and go backwards
+    current_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    for _ in range(limit * 2):  # Check up to 2x limit days to find days with data
+        if len(days_data) >= limit:
+            break
+            
+        day_start = current_date
+        day_end = day_start + timedelta(days=1)
+        
+        query = (select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.meta)
+                 .join(model.Pet, isouter=True)
+                 .where(model.Event.household_uuid == household_uuid)
+                 .where(model.Event.timestamp >= day_start)
+                 .where(model.Event.timestamp < day_end))
+        events_data = model.db.session.execute(query).all()
+        
+        # Only include days that have events
+        if events_data:
+            events: dict[str, Any] = {}
+            for event_row in events_data:
+                event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
+                pet_name = pet_name or ''
+                
+                match event_type:
+                    case model.EventType.Food:
+                        if 'Food' not in events:
+                            events['Food'] = {}
+                        calories = float(meta.get('calories', 0)) if meta else 0
+                        events['Food'][(pet_name, pet_icon)] = events['Food'].get((pet_name, pet_icon), 0) + calories
+                    case model.EventType.Litter:
+                        if 'Litter' not in events:
+                            events['Litter'] = {}
+                        events['Litter'][(pet_name, pet_icon)] = events['Litter'].get((pet_name, pet_icon), 0) + 1
+                    case model.EventType.Medicine:
+                        if 'Medicine' not in events:
+                            events['Medicine'] = {}
+                        # Store medicine name and dose, not just count
+                        medicine_key = (pet_name, pet_icon)
+                        if medicine_key not in events['Medicine']:
+                            events['Medicine'][medicine_key] = []
+                        medicine_info = {
+                            'name': meta.get('name', '') if meta else '',
+                            'dose': meta.get('dose', '') if meta else ''
+                        }
+                        events['Medicine'][medicine_key].append(medicine_info)
+            
+            # Convert tuple keys to JSON-serializable format
+            # Use a special delimiter that's unlikely to appear in pet names or paths
+            serializable_events: dict[str, Any] = {}
+            for event_type, event_data in events.items():
+                serializable_events[event_type] = {}
+                for pet_key, value in event_data.items():
+                    # Convert tuple to string key: "pet_name|||pet_icon"
+                    pet_name, pet_icon = pet_key
+                    key_str = f"{pet_name}|||{pet_icon}"
+                    serializable_events[event_type][key_str] = value
+            
+            # Format date for display
+            if current_date.date() == datetime.now(tz=model.APP_TIMEZONE).date():
+                date_str = "Today"
+            elif current_date.date() == (datetime.now(tz=model.APP_TIMEZONE) - timedelta(days=1)).date():
+                date_str = "Yesterday"
+            else:
+                date_str = current_date.strftime("%b %d")
+            
+            days_data.append({
+                'date': date_str,
+                'date_iso': current_date.strftime("%Y-%m-%d"),
+                'events': serializable_events
+            })
+        
+        # Move to previous day
+        current_date = current_date - timedelta(days=1)
+    
+    return days_data
+
+
 def new(household_uuid: str, event_type: model.EventType, created_by: str, 
         data: dict[str, Any], timestamp: Optional[datetime] = None) -> Optional[model.Event]:
     """Create a new event.

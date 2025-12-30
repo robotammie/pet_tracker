@@ -6,7 +6,7 @@ import pet_helper
 import user_helper
 
 from datetime import datetime
-from flask import redirect, render_template, request, session, send_from_directory
+from flask import redirect, render_template, request, session, send_from_directory, jsonify
 from urllib.parse import quote
 
 
@@ -175,17 +175,51 @@ def show_events_all():
 def show_events_day():
     """Day view route.
     
-    GET: show all events for today, aggregated by type
+    GET: show events for multiple days starting from today
     """
     household = session.get('household')
     if not household:
         return redirect("/")
     
     try:
-        events = event_controller.day_view(datetime.now(tz=model.APP_TIMEZONE))
-        return render_template("events_day.html", events=events)
+        pets = pet_helper.all(household.uuid)
+        household_name = household.name
+        # Load initial days (first 5 days with data)
+        initial_days = event_controller.days_view(datetime.now(tz=model.APP_TIMEZONE), limit=5)
+        return render_template("events_day.html", days=initial_days, pets=pets, household_name=household_name)
     except Exception as e:
-        return render_template("events_day.html", events={}, error="Error loading day view")
+        return render_template("events_day.html", days=[], pets=[], household_name="", error="Error loading day view")
+
+
+@app.route('/api/events/days', methods=['GET'])
+def api_events_days():
+    """API endpoint for infinite scroll.
+    
+    GET: returns JSON with events for days starting from a given date
+    Query params:
+        - start_date: ISO date string (YYYY-MM-DD), defaults to today
+        - limit: number of days to return, defaults to 5
+    """
+    household = session.get('household')
+    if not household:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        # Get start_date from query params, default to today
+        start_date_str = request.args.get('start_date')
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            start_date = start_date.replace(tzinfo=model.APP_TIMEZONE)
+        else:
+            start_date = datetime.now(tz=model.APP_TIMEZONE)
+        
+        # Get limit from query params, default to 5
+        limit = int(request.args.get('limit', 5))
+        
+        days = event_controller.days_view(start_date, limit=limit)
+        return jsonify({'days': days})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/events/new')
