@@ -3,7 +3,7 @@ import os
 from flask import Flask
 from flask_session import Session
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Float, Integer, String, DateTime, JSON, ForeignKey, create_engine
+from sqlalchemy import Float, Integer, String, DateTime, JSON, ForeignKey, Boolean, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 from enum import Enum
@@ -146,6 +146,7 @@ class FoodMeta(db.Model):
     serving_size: Mapped[float] = mapped_column(Float)
     unit: Mapped[Unit] = mapped_column(nullable=False)
     calories: Mapped[int] = mapped_column(Integer)
+    archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     def calorie_count(self, amt: float) -> int:
         """Calculate calories for a given amount of food.

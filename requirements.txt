@@ -10,5 +10,6 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 six==1.17.0
 SQLAlchemy==2.0.40
+alembic==1.13.2
 typing_extensions==4.13.2
 Werkzeug==3.1.3
