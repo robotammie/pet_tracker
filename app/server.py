@@ -266,10 +266,10 @@ def new_event():
 
 @app.route('/pets', methods=['GET', 'POST'])
 def view_pets():
-    """Homepage route.
+    """Pets route.
     
     GET: show all pets for the household
-    POST: handle login (redirects to GET) or create a new pet (not yet implemented)
+    POST: create a new pet (not yet implemented)
     """
     household = session.get('household')
     if not household:
@@ -278,9 +278,9 @@ def view_pets():
     # GET request or POST for creating pet
     try:
         pets_data = pets.all(household.uuid)
-        return render_template("homepage.html", household_name=household.name, pets=pets_data)
+        return render_template("pets.html", household_name=household.name, pets=pets_data)
     except Exception as e:
-        return render_template("homepage.html", pets=[], household_name=household.name, error="Error loading pets")
+        return render_template("pets.html", pets=[], household_name=household.name, error="Error loading pets")
 
 
 @app.route('/logout')
