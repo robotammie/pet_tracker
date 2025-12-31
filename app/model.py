@@ -136,6 +136,20 @@ class Event(db.Model):
         return '<Event %s - %s>' % (self.type, self.timestamp)
 
 
+class SavedEvent(db.Model):
+    """Event model representing saved events that can be quick-logged."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=False)
+    household: Mapped["Household"] = relationship()
+    pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
+    pet: Mapped["Pet"] = relationship()
+    type: Mapped[EventType] = mapped_column(nullable=False, index=True)
+    meta: Mapped[dict[str, Any]]
+
+    def __repr__(self):
+        return '<Event %s - %s>' % (self.type, self.meta)
+
+
 class FoodMeta(db.Model):
     """Food metadata model storing nutritional information for food items."""
     uuid: Mapped[str] = mapped_column(String(64), primary_key=True)

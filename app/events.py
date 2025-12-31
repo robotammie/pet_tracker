@@ -150,7 +150,7 @@ def summary() -> list[dict[str, Any]]:
             time_ago = "weeks ago"
         elif delta.days > 7:
             time_ago = f"{delta.days // 7} weeks ago"
-        elif delta.days > 0:
+        elif delta.days > 1:
             time_ago = f"{delta.days} days ago"
         elif delta.seconds > 3600:
             time_ago = f"{delta.seconds // 3600} hours ago"

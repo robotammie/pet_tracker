@@ -258,10 +258,10 @@ def new_event():
         pets_data = pets.all(household.uuid)
         foods_data = foods.all(household.uuid)
         medicines_data = medicine.all(household.uuid)
-        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets_data, foods=foods_data, medicines=medicines_data)
+        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), household_name=household.name, pets=pets_data, foods=foods_data, medicines=medicines_data)
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
-                              pets=[], foods=[], error="Error loading form")
+                              household_name=household.name, pets=[], foods=[], medicines=[], error="Error loading form")
 
 
 @app.route('/pets', methods=['GET', 'POST'])
