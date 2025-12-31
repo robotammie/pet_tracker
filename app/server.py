@@ -1,6 +1,7 @@
 import os
 import events
 import foods
+import medicine
 import model
 import pets
 import users
@@ -77,7 +78,7 @@ def show_events():
                 created = request.args.get('created')
                 return render_template("events.html", events=events_data, pets=pets_data, household_name=household_name, error=error, created=created)
             except Exception as e:
-                return render_template("events.html", events=[], pets=[], household_name="", error="Error loading events")
+                return render_template("events.html", events=[], pets=[], household_name=household.name, error="Error loading events")
                 
         case 'POST':
             data = request.form
@@ -125,6 +126,26 @@ def show_events():
                             # If food data is invalid, continue without saving food
                             pass
 
+            # If save-medicine checkbox is checked and this is a medicine event, save the medicine
+            medicine_save_error = None
+            if ev_type == model.EventType.Medicine.value and data.get('save-medicine'):
+                medicine_name = data.get('medicine-name', '').strip()
+
+                # Validate medicine data before saving
+                if medicine_name:
+                    # Check if medicine with same name already exists
+                    if medicine.exists(household.uuid, medicine_name):
+                        medicine_save_error = f"Medicine '{medicine_name}' already exists and was not saved"
+                    else:
+                        try:
+                            medicine.create(
+                                household_uuid=household.uuid,
+                                name=medicine_name
+                            )
+                        except (ValueError, TypeError):
+                            # If medicine data is invalid, continue without saving medicine
+                            pass
+
             try:
                 events.new(
                     household_uuid=household.uuid,
@@ -135,14 +156,17 @@ def show_events():
                 )
                 # Redirect to GET to prevent double submission on refresh
                 # Include food save error if one occurred
+                result ="/?created=1"
                 if food_save_error:
-                    return redirect(f"/?created=1&error={quote(food_save_error)}")
-                return redirect("/?created=1")
+                    result = result + f"&error={quote(food_save_error)}"
+                if medicine_save_error:
+                    result = result + f"&error={quote(medicine_save_error)}"
+                return redirect(result)
             except Exception as e:
                 # On error, still redirect but with error message
                 # Include food save error if one occurred
-                if food_save_error:
-                    return redirect(f"/?error={quote(f'Error creating event: {food_save_error}')}")
+                if food_save_error or medicine_save_error:
+                    return redirect(f"/?error={quote(f'Error creating event: {food_save_error, medicine_save_error}')}")
                 return redirect("/?error=Error creating event")
 
 
@@ -165,7 +189,7 @@ def show_events_all():
       created = request.args.get('created')
       return render_template("events_all.html", events=events_data, pets=pets_data, household_name=household_name, error=error, created=created)
   except Exception as e:
-      return render_template("events_all.html", events=[], pets=[], household_name="", error="Error loading events")
+      return render_template("events_all.html", events=[], pets=[], household_name=household.name, error="Error loading events")
 
 
 @app.route('/events/day', methods=['GET'])
@@ -233,14 +257,15 @@ def new_event():
         now = datetime.now(tz=model.APP_TIMEZONE)
         pets_data = pets.all(household.uuid)
         foods_data = foods.all(household.uuid)
-        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets_data, foods=foods_data)
+        medicines_data = medicine.all(household.uuid)
+        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), pets=pets_data, foods=foods_data, medicines=medicines_data)
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
                               pets=[], foods=[], error="Error loading form")
 
 
 @app.route('/pets', methods=['GET', 'POST'])
-def home():
+def view_pets():
     """Homepage route.
     
     GET: show all pets for the household
@@ -255,7 +280,7 @@ def home():
         pets_data = pets.all(household.uuid)
         return render_template("homepage.html", household_name=household.name, pets=pets_data)
     except Exception as e:
-        return render_template("homepage.html", pets=[], household_name=household.get('name', ''), error="Error loading pets")
+        return render_template("homepage.html", pets=[], household_name=household.name, error="Error loading pets")
 
 
 @app.route('/logout')

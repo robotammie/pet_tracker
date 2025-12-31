@@ -162,6 +162,17 @@ class FoodMeta(db.Model):
     def __repr__(self):
         return f"<FoodMeta {self.name} - {self.type.value}>"
 
+class MedicineMeta(db.Model):
+    """Medicine metadata model storing information for medicine items."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'))
+    household: Mapped["Household"] = relationship()
+    name: Mapped[str] = mapped_column(String(64))
+    archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    def __repr__(self):
+        return f"<MedicineMeta {self.name}>"
+
 ###############################################################
 
 def connect_to_db(app, db_uri=None):

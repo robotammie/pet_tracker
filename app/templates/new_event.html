@@ -88,11 +88,24 @@
         <div id="medicine-fields" class="hidden">
           <div class="new-event-field">
             <label for="medicine-name">Medicine Name:</label>
-            <input type="text" name="medicine-name" id="medicine-name" aria-label="Enter medicine name"/>
+            <select name="medicine-name" id="medicine-name" aria-label="Select medicine name or choose to enter custom">
+              <option value="">-- Select or enter new --</option>
+              {% for medicine in medicines %}
+                <option value="{{ medicine['name'] }}" data-uuid="{{ medicine['uuid'] }}">{{ medicine['name'] }}</option>
+              {% endfor %}
+              <option value="__other__">Other (enter custom name)</option>
+            </select>
+            <input type="text" name="medicine-name-custom" id="medicine-name-custom" class="hidden" placeholder="Enter medicine name" aria-label="Enter custom medicine name"/>
           </div>
           <div class="new-event-field">
             <label for="medicine-dose">Medicine Dose:</label>
             <input type="text" name="medicine-dose" id="medicine-dose" aria-label="Enter medicine dose"/>
+          </div>
+          <div class="new-event-field">
+            <label class="checkbox-label">
+              <input type="checkbox" name="save-medicine" id="save-medicine" value="1" aria-label="Save this medicine for future use"/>
+              Save Medicine
+            </label>
           </div>
         </div>
         <button type="submit" aria-label="Create new event">Create</button>
@@ -114,17 +127,29 @@
         {% endif %}
       };
 
+      const medicinesData = {
+        {% if medicines %}
+        {% for medicine in medicines %}
+        "{{ medicine['name']|replace('"', '\\"') }}": {
+          "name": "{{ medicine['name'] }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+        {% endif %}
+      };
+
       // Get all event type radio buttons
       const eventTypeRadios = document.querySelectorAll('input[name="event-type"]');
       const petSelect = document.getElementById('pet');
       const foodFields = document.getElementById('food-fields');
-      const medicineFields = document.getElementById('medicine-fields');
       const foodNameSelect = document.getElementById('food-name');
       const foodNameCustom = document.getElementById('food-name-custom');
       const foodTypeSelect = document.getElementById('food-type');
       const foodAmountInput = document.getElementById('food-amount');
       const foodUnitSelect = document.getElementById('food-unit');
       const foodCaloriesInput = document.getElementById('food-calories');
+      const medicineFields = document.getElementById('medicine-fields');
+      const medicineNameSelect = document.getElementById('medicine-name');
+      const medicineNameCustom = document.getElementById('medicine-name-custom');
 
       // Track currently selected food for calorie calculation
       let currentFoodData = null;
@@ -135,6 +160,14 @@
           return foodNameCustom.value.trim();
         }
         return foodNameSelect.value.trim();
+      }
+
+      // Function to get the actual medicine name (from select or custom input)
+      function getMedicineName() {
+        if (medicineNameSelect.value === '__other__') {
+          return medicineNameCustom.value.trim();
+        }
+        return medicineNameSelect.value.trim();
       }
 
       // Function to show/hide custom food name input
@@ -149,6 +182,21 @@
           foodNameCustom.required = false;
           foodNameCustom.removeAttribute('name');
           foodNameSelect.setAttribute('name', 'food-name');
+        }
+      }
+
+      // Function to show/hide custom medicine name input
+      function toggleCustomMedicineInput() {
+        if (medicineNameSelect.value === '__other__') {
+          medicineNameCustom.classList.remove('hidden');
+          medicineNameCustom.required = true;
+          medicineNameSelect.removeAttribute('name'); // Remove name so custom input is submitted
+          medicineNameCustom.setAttribute('name', 'medicine-name');
+        } else {
+          medicineNameCustom.classList.add('hidden');
+          medicineNameCustom.required = false;
+          medicineNameCustom.removeAttribute('name');
+          medicineNameSelect.setAttribute('name', 'medicine-name');
         }
       }
 
@@ -211,8 +259,9 @@
       // Listen for changes on food amount to recalculate calories
       foodAmountInput.addEventListener('input', calculateCalories);
       foodAmountInput.addEventListener('change', calculateCalories);
+      medicineNameSelect.addEventListener('change', toggleCustomMedicineInput);
 
-      // Function to toggle food fields visibility
+      // Function to toggle fields visibility
       function toggleFields() {
         const foodSelected = document.getElementById('event-type-food').checked;
         if (foodSelected) {
@@ -245,6 +294,7 @@
       togglePetSelect();
       toggleFields();
       toggleCustomFoodInput();
+      toggleCustomMedicineInput();
     </script>
 
 {% endblock %}
