@@ -47,10 +47,10 @@
                 {% if type == 'Medicine' and value is iterable and value is not string %}
                   {% for medicine in value %}
                     <tr data-event-type="{{ type }}">
-                      <td>
+                      <td class="event-type-icon">
                         <img src="/assets/{{ type }}Icon.svg" alt="{{ type }}" title="{{ type }}" aria-label="{{ type }} event type icon" class="event-icon" />
                       </td>
-                      <td>
+                      <td class="event-pet-icon">
                         {%if pet_name %}
                           <img src="/{{ pet_icon }}" alt="{{ pet_name }}" title="{{ pet_name }}" aria-label="{{ pet_name }} pet icon" class="event-icon" />
                         {% endif %}
@@ -66,10 +66,10 @@
                   {% endfor %}
                 {% else %}
                   <tr data-event-type="{{ type }}">
-                    <td>
+                    <td class="event-type-icon">
                       <img src="/assets/{{ type }}Icon.svg" alt="{{ type }}" title="{{ type }}" aria-label="{{ type }} event type icon" class="event-icon" />
                     </td>
-                    <td>
+                    <td class="event-pet-icon">
                       {%if pet_name %}
                         <img src="/{{ pet_icon }}" alt="{{ pet_name }}" title="{{ pet_name }}" aria-label="{{ pet_name }} pet icon" class="event-icon" />
                       {% endif %}

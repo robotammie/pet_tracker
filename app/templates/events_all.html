@@ -45,10 +45,10 @@
     <tbody>
     {% for event in events %}
       <tr data-event-type="{{ event['type'] }}">
-        <td>
+        <td class="event-type-icon">
           <img src="/assets/{{ event['type'] }}Icon.svg" alt="{{ event['type'] }}" title="{{ event['type'] }}" aria-label="{{ event['type'] }} event type icon" class="event-icon" />
         </td>
-        <td>
+        <td class="event-pet-icon">
           {%if event['pet-name'] %}
             <img src="/{{ event['pet-icon'] }}" alt="{{ event['pet-name'] }}" title="{{ event['pet-name'] }}" aria-label="{{ event['pet-name'] }} pet icon" class="event-icon" />
           {% endif %}
