@@ -93,6 +93,27 @@ def _create_medicine_event(household_uuid: str, created_by: str, data: dict[str,
     }
     return event
 
+
+def _create_vitals_event(household_uuid: str, created_by: str, data: dict[str, Any], 
+                         timestamp: Optional[datetime] = None) -> model.Event:
+    """Create a Vitals event.
+
+    Args:
+        household_uuid: UUID of the household
+        created_by: UUID of the user creating the event
+        data: Dictionary containing vitals event data
+        timestamp: Optional timestamp, defaults to now
+
+    Returns:
+        Event object configured for Vitals type
+    """
+    event = _create_event_base(household_uuid, created_by, model.EventType.Vitals, data, timestamp)
+    event.meta = {
+        'weight': data.get('vitals-weight'),
+        'weight-unit': data.get('vitals-weight-unit'),
+    }
+    return event
+
 # # # # # # # # # # # # # # # # # # # # #
 
 def all_events() -> list[dict[str, Any]]:
@@ -332,6 +353,8 @@ def new(household_uuid: str, event_type: model.EventType, created_by: str,
                 new_event = _create_litter_event(household_uuid, created_by, data, timestamp)
             case model.EventType.Medicine:
                 new_event = _create_medicine_event(household_uuid, created_by, data, timestamp)
+            case model.EventType.Vitals:
+                new_event = _create_vitals_event(household_uuid, created_by, data, timestamp)
             case _:
                 return None
 

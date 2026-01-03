@@ -258,7 +258,16 @@ def new_event():
         pets_data = pets.all(household.uuid)
         foods_data = foods.all(household.uuid)
         medicines_data = medicine.all(household.uuid)
-        return render_template("new_event.html", now=now.strftime("%Y-%m-%dT%H:%M"), household_name=household.name, pets=pets_data, foods=foods_data, medicines=medicines_data)
+        event_types = [model.EventType.Food, model.EventType.Litter, model.EventType.Medicine, model.EventType.Vitals]
+        return render_template(
+            "new_event.html",
+            now=now.strftime("%Y-%m-%dT%H:%M"),
+            household_name=household.name,
+            pets=pets_data,
+            foods=foods_data,
+            medicines=medicines_data,
+            event_types=event_types
+        )
     except Exception as e:
         return render_template("new_event.html", now=datetime.now(tz=model.APP_TIMEZONE).strftime("%Y-%m-%dT%H:%M"), 
                               household_name=household.name, pets=[], foods=[], medicines=[], error="Error loading form")

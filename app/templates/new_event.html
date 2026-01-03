@@ -7,18 +7,12 @@
         <fieldset>
           <legend>Event Type:</legend>
           <div class="radio-group" role="radiogroup" aria-label="Select event type">
-            <label>
-              <input type="radio" name="event-type" value="1" id="event-type-food" required aria-label="Food event type" />
-              Food
-            </label>
-            <label>
-              <input type="radio" name="event-type" value="2" id="event-type-litter" required aria-label="Litter event type" />
-              Litter
-            </label>
-            <label>
-              <input type="radio" name="event-type" value="3" id="event-type-medicine" required aria-label="Medicine event type" />
-              Medicine
-            </label>
+            {% for event_type in event_types %}
+              <label>
+                <input type="radio" name="event-type" value="{{ event_type.value }}" id="event-type-{{ event_type.name }}" required aria-label="{{ event_type.name }} event type" />
+                {{event_type.name}}
+              </label>
+            {% endfor %}
           </div>
         </fieldset>
         <div class="new-event-field">
@@ -263,13 +257,13 @@
 
       // Function to toggle fields visibility
       function toggleFields() {
-        const foodSelected = document.getElementById('event-type-food').checked;
+        const foodSelected = document.getElementById('event-type-Food').checked;
         if (foodSelected) {
           foodFields.classList.remove('hidden');
         } else {
           foodFields.classList.add('hidden');
         }
-        const medicineSelected = document.getElementById('event-type-medicine').checked;
+        const medicineSelected = document.getElementById('event-type-Medicine').checked;
         if (medicineSelected) {
           medicineFields.classList.remove('hidden');
         } else {
@@ -279,7 +273,7 @@
 
       // enable/disable pet select based on event type
       function togglePetSelect() {
-        const litterSelected = document.getElementById('event-type-litter').checked;
+        const litterSelected = document.getElementById('event-type-Litter').checked;
         petSelect.value = litterSelected ? 0 : petSelect.value;
         petSelect.disabled = litterSelected;
       }

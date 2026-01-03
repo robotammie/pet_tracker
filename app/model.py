@@ -35,6 +35,7 @@ class EventType(Enum):
   Food = 1
   Litter = 2
   Medicine = 3
+  Vitals = 4
 
 class Unit(Enum):
   GRAMS = 'grams'
