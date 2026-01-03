@@ -37,6 +37,9 @@ class EventType(Enum):
   Medicine = 3
   Vitals = 4
 
+class VitalsType(Enum):
+  Weight = 1
+  Length = 2
 class Unit(Enum):
   GRAMS = 'grams'
   CUPS = 'cups'
@@ -128,7 +131,6 @@ class Event(db.Model):
     pet: Mapped["Pet"] = relationship()
     timestamp: Mapped[datetime] = mapped_column(nullable=False)
     type: Mapped[EventType] = mapped_column(nullable=False, index=True)
-    meta: Mapped[dict[str, Any]]
     created_at: Mapped[datetime] = mapped_column(nullable=False)
     created_by: Mapped[str] = mapped_column(String(64), ForeignKey('app_user.uuid'), nullable=True)
     created_by_user: Mapped["AppUser"] = relationship()
@@ -149,6 +151,65 @@ class SavedEvent(db.Model):
 
     def __repr__(self):
         return '<Event %s - %s>' % (self.type, self.meta)
+
+
+class FoodEvent(db.Model):
+    """Food metadata model storing nutritional information for food items."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    event_id: Mapped[int] = mapped_column(Integer, ForeignKey('event.id'))
+    event: Mapped["Event"] = relationship()
+    name: Mapped[str] = mapped_column(String(64))
+    type: Mapped[FoodType] = mapped_column(nullable=False)
+    serving_size: Mapped[float] = mapped_column(Float)
+    unit: Mapped[Unit] = mapped_column(nullable=False)
+    calories: Mapped[int] = mapped_column(Integer)
+
+    def __repr__(self):
+        return f"<FoodEvent {self.name} - {self.type.value}>"
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'type': self.type.value,
+            'serving_size': self.serving_size,
+            'unit': self.unit.value,
+            'calories': self.calories,
+        }
+
+
+class MedicineEvent(db.Model):
+    """Food metadata model storing nutritional information for food items."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    event_id: Mapped[int] = mapped_column(Integer, ForeignKey('event.id'))
+    event: Mapped["Event"] = relationship()
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    dose: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    def __repr__(self):
+        return f"<MedicineEvent {self.name}>"
+
+    def to_dict(self):
+        return {
+            'name': self.name,
+            'dose': self.dose,
+        }
+
+class VitalsEvent(db.Model):
+    """Food metadata model storing nutritional information for food items."""
+    uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    event_id: Mapped[int] = mapped_column(Integer, ForeignKey('event.id'))
+    event: Mapped["Event"] = relationship()
+    type: Mapped[VitalsType] = mapped_column(nullable=False)
+    value: Mapped[float] = mapped_column(Float, nullable=False)
+
+    def __repr__(self):
+        return f"<VitalsEvent {self.type.value} - {self.value}>"
+
+    def to_dict(self):
+        return {
+            'type': self.type.name,
+            'value': self.value,
+        }
 
 
 class FoodMeta(db.Model):

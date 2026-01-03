@@ -127,22 +127,31 @@ def all_events() -> list[dict[str, Any]]:
     
     household_uuid = session.get('household').uuid
     events_raw = model.db.session.execute(
-        select(model.Event)
+        select(model.Event, model.Pet, model.FoodEvent, model.MedicineEvent, model.VitalsEvent)
         .join(model.Pet, isouter=True)
+        .join(model.FoodEvent, isouter=True)
+        .join(model.MedicineEvent, isouter=True)
+        .join(model.VitalsEvent, isouter=True)
         .order_by(model.Event.timestamp.desc())
         .where(model.Event.household_uuid == household_uuid)
     ).all()
 
     event_data = []
-    for row in events_raw:
-        for event in row:
-            event_data.append({
-                'timestamp': event.timestamp,
-                'pet-name': event.pet.name if event.pet_uuid and event.pet else '',
-                'pet-icon': event.pet.photo_addr if event.pet_uuid and event.pet and event.pet.photo_addr else '',
-                'type': event.type.name,
-                'meta': event.meta,
-            })
+    for event, pet, food_event, medicine_event, vitals_event in events_raw:
+        meta = None
+        if event.type == model.EventType.Food and food_event:
+            meta = food_event.to_dict()
+        elif event.type == model.EventType.Medicine and medicine_event:
+            meta = medicine_event.to_dict()
+        elif event.type == model.EventType.Vitals and vitals_event:
+            meta = vitals_event.to_dict()
+        event_data.append({
+            'timestamp': event.timestamp,
+            'pet-name': pet.name if pet and pet.name else '',
+            'pet-icon': pet.photo_addr if pet and pet.photo_addr else '',
+            'type': event.type.name,
+            'meta': meta,
+        })
     
     return event_data
 
@@ -157,20 +166,23 @@ def summary() -> list[dict[str, Any]]:
     
     household_uuid = session.get('household').uuid
     events_raw = model.db.session.execute(
-        select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.timestamp, model.Event.meta)
+        select(model.Event, model.Pet, model.FoodEvent, model.MedicineEvent, model.VitalsEvent)
         .distinct(model.Event.type, model.Event.pet_uuid)
         .join(model.Pet, isouter=True)
+        .join(model.FoodEvent, isouter=True)
+        .join(model.MedicineEvent, isouter=True)
+        .join(model.VitalsEvent, isouter=True)
         .order_by(model.Event.type, model.Event.pet_uuid, model.Event.timestamp.desc())
         .where(model.Event.household_uuid == household_uuid)
     ).all()
 
     event_data = []
-    for row in events_raw:
-        delta = datetime.now(tz=model.APP_TIMEZONE) - row.timestamp
+    for event, pet, food_event, medicine_event, vitals_event in events_raw:
+        delta = datetime.now(tz=model.APP_TIMEZONE) - event.timestamp
         if delta.days > 29:
             time_ago = "weeks ago"
         elif delta.days > 7:
-            time_ago = f"{delta.days // 7} weeks ago"
+            time_ago = f"{delta.days // 14} weeks ago"
         elif delta.days > 1:
             time_ago = f"{delta.days} days ago"
         elif delta.seconds > 3600:
@@ -180,12 +192,19 @@ def summary() -> list[dict[str, Any]]:
         else:
             time_ago = f"{delta.seconds} seconds ago"
 
+        meta = None
+        if event.type == model.EventType.Food and food_event:
+            meta = food_event.to_dict()
+        elif event.type == model.EventType.Medicine and medicine_event:
+            meta = medicine_event.to_dict()
+        elif event.type == model.EventType.Vitals and vitals_event:
+            meta = vitals_event.to_dict()
         event_data.append({
-            'type': row.type.name,
-            'pet-name': row.name if row.name else '',
-            'pet-icon': row.photo_addr if row.photo_addr else '',
+            'type': event.type.name,
+            'pet-name': pet.name if pet and pet.name else '',
+            'pet-icon': pet.photo_addr if pet and pet.photo_addr else '',
             'time_ago': time_ago,
-            'meta': row.meta,
+            'meta': meta,
         })
     
     return event_data
@@ -206,32 +225,29 @@ def day_view(date: datetime) -> dict[str, Any]:
     start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
     
-    query = (select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.meta)
+    query = (select(model.Event, model.Pet, model.FoodEvent, model.MedicineEvent, model.VitalsEvent)
              .join(model.Pet, isouter=True)
+             .join(model.FoodEvent, isouter=True)
+             .join(model.MedicineEvent, isouter=True)
+             .join(model.VitalsEvent, isouter=True)
              .where(model.Event.household_uuid == household_uuid)
              .where(model.Event.timestamp >= start_date)
              .where(model.Event.timestamp < end_date))
     events_raw = model.db.session.execute(query).all()
 
-    event_data: dict[str, Any] = {}
-    for event_row in events_raw:
-        event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
+    event_data: dict[str, Any] = {'Food': {}, 'Litter': {}, 'Medicine': {}, 'Vitals': {}}
+    for event, pet, food_event, medicine_event, vitals_event in events_raw:
         pet_name = pet_name or ''
-        
-        match event_type:
+        match event.type:
             case model.EventType.Food:
-                if 'Food' not in event_data:
-                    event_data['Food'] = {}
-                calories = float(meta.get('calories', 0)) if meta else 0
-                event_data['Food'][(pet_name, pet_icon)] = event_data['Food'].get((pet_name, pet_icon), 0) + calories
+                calories = float(food_event.calories) if food_event else 0
+                event_data['Food'][(pet_name, pet.photo_addr)] = event_data['Food'].get((pet_name, pet.photo_addr), 0) + calories
             case model.EventType.Litter:
-                if 'Litter' not in event_data:
-                    event_data['Litter'] = {}
-                event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
+                event_data['Litter'][(pet_name, pet.photo_addr)] = event_data['Litter'].get((pet_name, pet.photo_addr), 0) + 1
             case model.EventType.Medicine:
-                if 'Medicine' not in event_data:
-                    event_data['Medicine'] = {}
-                event_data['Medicine'][(pet_name, pet_icon)] = event_data['Medicine'].get((pet_name, pet_icon), 0) + 1
+                event_data['Medicine'][(pet_name, pet.photo_addr)] = event_data['Medicine'].get((pet_name, pet.photo_addr), 0) + 1
+            case model.EventType.Vitals:
+                event_data['Vitals'][(pet_name, pet.photo_addr)] = event_data['Vitals'].get((pet_name, pet.photo_addr), 0) + 1
 
     return event_data
 
@@ -263,8 +279,11 @@ def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
         day_start = current_date
         day_end = day_start + timedelta(days=1)
         
-        query = (select(model.Event.type, model.Pet.name, model.Pet.photo_addr, model.Event.meta)
+        query = (select(model.Event, model.Pet, model.FoodEvent, model.MedicineEvent, model.VitalsEvent)
                  .join(model.Pet, isouter=True)
+                 .join(model.FoodEvent, isouter=True)
+                 .join(model.MedicineEvent, isouter=True)
+                 .join(model.VitalsEvent, isouter=True)
                  .where(model.Event.household_uuid == household_uuid)
                  .where(model.Event.timestamp >= day_start)
                  .where(model.Event.timestamp < day_end))
@@ -272,33 +291,19 @@ def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
         
         # Only include days that have events
         if events_raw:
-            event_data: dict[str, Any] = {}
-            for event_row in events_raw:
-                event_type, pet_name, pet_icon, meta = event_row[0], event_row[1], event_row[2], event_row[3]
-                pet_name = pet_name or ''
+            event_data: dict[str, Any] = {'Food': {}, 'Litter': {}, 'Medicine': {}, 'Vitals': {}}
+            for event, pet, food_event, medicine_event, vitals_event in events_raw:
+                pet_name = pet.name if pet and pet.name else ''
+                pet_icon = pet.photo_addr if pet and pet.photo_addr else ''
                 
-                match event_type:
+                match event.type:
                     case model.EventType.Food:
-                        if 'Food' not in event_data:
-                            event_data['Food'] = {}
-                        calories = float(meta.get('calories', 0)) if meta else 0
+                        calories = float(food_event.calories) if food_event else 0
                         event_data['Food'][(pet_name, pet_icon)] = event_data['Food'].get((pet_name, pet_icon), 0) + calories
                     case model.EventType.Litter:
-                        if 'Litter' not in event_data:
-                            event_data['Litter'] = {}
                         event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
                     case model.EventType.Medicine:
-                        if 'Medicine' not in event_data:
-                            event_data['Medicine'] = {}
-                        # Store medicine name and dose, not just count
-                        medicine_key = (pet_name, pet_icon)
-                        if medicine_key not in event_data['Medicine']:
-                            event_data['Medicine'][medicine_key] = []
-                        medicine_info = {
-                            'name': meta.get('name', '') if meta else '',
-                            'dose': meta.get('dose', '') if meta else ''
-                        }
-                        event_data['Medicine'][medicine_key].append(medicine_info)
+                        event_data['Medicine'][(pet_name, pet_icon)] = event_data['Medicine'].get((pet_name, pet_icon), 0) + 1
             
             # Convert tuple keys to JSON-serializable format
             # Use a special delimiter that's unlikely to appear in pet names or paths
