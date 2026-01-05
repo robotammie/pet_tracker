@@ -4,10 +4,12 @@ import foods
 import medicine
 import model
 import pets
+import saved_events
 import users
 
 from datetime import datetime
 from flask import redirect, render_template, request, session, send_from_directory, jsonify
+from sqlalchemy import select
 from urllib.parse import quote
 
 
@@ -71,17 +73,66 @@ def show_events():
         case 'GET':
             try:
                 events_data = events.summary()
-                pets_data = pets.all(household.uuid)
+                quick_events_data = saved_events.all()
                 household_name = household.name
                 # Get error or success message from query parameters
                 error = request.args.get('error')
                 created = request.args.get('created')
-                return render_template("events.html", events=events_data, pets=pets_data, household_name=household_name, error=error, created=created)
+                return render_template("events.html", events=events_data, quick_events=quick_events_data, household_name=household_name, error=error, created=created)
             except Exception as e:
-                return render_template("events.html", events=[], pets=[], household_name=household.name, error="Error loading events")
+                breakpoint()
+                return render_template("events.html", events=[], quick_events=[], household_name=household.name, error="Error loading events")
                 
         case 'POST':
             data = request.form
+
+            # Handle quick event creation from saved event
+            saved_event_uuid = data.get('saved-event-uuid')
+            if saved_event_uuid:
+                try:
+                    # Fetch the saved event from the database
+                    saved_event = model.db.session.execute(
+                        select(model.SavedEvent)
+                        .where(model.SavedEvent.uuid == saved_event_uuid)
+                        .where(model.SavedEvent.household_uuid == household.uuid)
+                    ).scalar_one_or_none()
+
+                    if not saved_event:
+                        return redirect("/?error=Saved event not found")
+
+                    # Convert saved event metadata to the format expected by events.new()
+                    event_data = {}
+
+                    # Only set pet for Food and Medicine events (matching _create_event_base behavior)
+                    if saved_event.pet_uuid and saved_event.type in [model.EventType.Food, model.EventType.Medicine]:
+                        event_data['pet'] = saved_event.pet_uuid
+
+                    # Convert meta to the expected format based on event type
+                    if saved_event.meta:
+                        if saved_event.type == model.EventType.Food:
+                            event_data['food-name'] = saved_event.meta.get('name', '')
+                            event_data['food-type'] = saved_event.meta.get('type', '')
+                            event_data['food-amount'] = str(saved_event.meta.get('amount', ''))
+                            event_data['food-unit'] = saved_event.meta.get('unit', '')
+                            event_data['food-calories'] = str(saved_event.meta.get('calories', ''))
+                        elif saved_event.type == model.EventType.Medicine:
+                            event_data['medicine-name'] = saved_event.meta.get('name', '')
+                            event_data['medicine-dose'] = saved_event.meta.get('dose', '')
+                        elif saved_event.type == model.EventType.Vitals:
+                            event_data['vitals-weight'] = str(saved_event.meta.get('weight', ''))
+                            event_data['vitals-weight-unit'] = saved_event.meta.get('weight-unit', '')
+
+                    # Create event with current timestamp
+                    events.new(
+                        household_uuid=household.uuid,
+                        event_type=saved_event.type,
+                        created_by=user.uuid,
+                        data=event_data,
+                        timestamp=datetime.now(tz=model.APP_TIMEZONE)
+                    )
+                    return redirect("/?created=1")
+                except Exception as e:
+                    return redirect(f"/?error={quote('Error creating quick event')}")
 
             # Make sure event type is an integer.
             try:
@@ -169,6 +220,10 @@ def show_events():
                     return redirect(f"/?error={quote(f'Error creating event: {food_save_error, medicine_save_error}')}")
                 return redirect("/?error=Error creating event")
 
+
+@app.route('/events', methods=['GET'])
+def show_saved_events():
+    return redirect("/")
 
 @app.route('/events/all', methods=['GET'])
 def show_events_all():

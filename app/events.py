@@ -1,4 +1,5 @@
 import model
+import uuid
 
 from datetime import datetime, timedelta, timezone
 from flask import session
@@ -18,7 +19,7 @@ def _create_event_base(household_uuid: str, created_by: str, event_type: model.E
         timestamp: Optional timestamp, defaults to now
         
     Returns:
-        Event object with common fields initialized
+        Tuple containing Event object and metadata object (if applicable)
     """
     now = datetime.now(tz=model.APP_TIMEZONE)
     event = model.Event()
@@ -42,17 +43,46 @@ def _create_food_event(household_uuid: str, created_by: str, data: dict[str, Any
         timestamp: Optional timestamp, defaults to now
         
     Returns:
-        Event object configured for Food type
+        Tuple containing Event object and metadata object (if applicable)
     """
     event = _create_event_base(household_uuid, created_by, model.EventType.Food, data, timestamp)
-    event.meta = {
-        'name': data.get('food-name'),
-        'type': data.get('food-type'),
-        'amount': data.get('food-amount'),
-        'unit': data.get('food-unit'),
-        'calories': data.get('food-calories'),
-    }
-    return event
+    meta = model.FoodEvent()
+    meta.name = data.get('food-name')
+    # Convert food-type string to FoodType enum
+    food_type_str = data.get('food-type', '').lower()
+    if food_type_str == 'wet':
+        meta.type = model.FoodType.WET
+    elif food_type_str == 'dry':
+        meta.type = model.FoodType.DRY
+    elif food_type_str == 'treats':
+        meta.type = model.FoodType.TREATS
+    else:
+        meta.type = model.FoodType.OTHER
+    # Convert amount to float for serving_size
+    amount_str = data.get('food-amount', '0')
+    try:
+        meta.serving_size = float(amount_str)
+    except (ValueError, TypeError):
+        meta.serving_size = 0.0
+    # Convert unit string to Unit enum
+    unit_str = data.get('food-unit', '').lower()
+    if unit_str == 'grams':
+        meta.unit = model.Unit.GRAMS
+    elif unit_str == 'cups':
+        meta.unit = model.Unit.CUPS
+    elif unit_str == 'oz':
+        meta.unit = model.Unit.OZ
+    elif unit_str == 'cans':
+        meta.unit = model.Unit.CANS
+    else:
+        meta.unit = model.Unit.GRAMS  # Default
+    # Convert calories to int
+    calories_str = data.get('food-calories', '0')
+    try:
+        meta.calories = int(calories_str)
+    except (ValueError, TypeError):
+        meta.calories = 0
+    return event, meta
 
 
 def _create_litter_event(household_uuid: str, created_by: str, data: dict[str, Any], 
@@ -66,11 +96,10 @@ def _create_litter_event(household_uuid: str, created_by: str, data: dict[str, A
         timestamp: Optional timestamp, defaults to now
         
     Returns:
-        Event object configured for Litter type
+        Event object configured for Litter type (None metadata object)
     """
     event = _create_event_base(household_uuid, created_by, model.EventType.Litter, data, timestamp)
-    event.meta = None  # no current meta values for this type of event
-    return event
+    return event, None
 
 
 def _create_medicine_event(household_uuid: str, created_by: str, data: dict[str, Any], 
@@ -84,14 +113,13 @@ def _create_medicine_event(household_uuid: str, created_by: str, data: dict[str,
         timestamp: Optional timestamp, defaults to now
         
     Returns:
-        Event object configured for Medicine type
+        Tuple containing Event object and metadata object (if applicable)
     """
     event = _create_event_base(household_uuid, created_by, model.EventType.Medicine, data, timestamp)
-    event.meta = {
-        'name': data.get('medicine-name'),
-        'dose': data.get('medicine-dose'),
-    }
-    return event
+    meta = model.MedicineEvent()
+    meta.name = data.get('medicine-name')
+    meta.dose = data.get('medicine-dose')
+    return event, meta
 
 
 def _create_vitals_event(household_uuid: str, created_by: str, data: dict[str, Any], 
@@ -105,14 +133,19 @@ def _create_vitals_event(household_uuid: str, created_by: str, data: dict[str, A
         timestamp: Optional timestamp, defaults to now
 
     Returns:
-        Event object configured for Vitals type
+        Tuple containing Event object and metadata object (if applicable)
     """
     event = _create_event_base(household_uuid, created_by, model.EventType.Vitals, data, timestamp)
-    event.meta = {
-        'weight': data.get('vitals-weight'),
-        'weight-unit': data.get('vitals-weight-unit'),
-    }
-    return event
+    meta = model.VitalsEvent()
+    # VitalsEvent model expects type (VitalsType enum) and value (float)
+    meta.type = model.VitalsType.Weight  # Currently only supporting weight
+    # Convert weight to float for value
+    weight_str = data.get('vitals-weight', '0')
+    try:
+        meta.value = float(weight_str)
+    except (ValueError, TypeError):
+        meta.value = 0.0
+    return event, meta
 
 # # # # # # # # # # # # # # # # # # # # #
 
@@ -237,17 +270,18 @@ def day_view(date: datetime) -> dict[str, Any]:
 
     event_data: dict[str, Any] = {'Food': {}, 'Litter': {}, 'Medicine': {}, 'Vitals': {}}
     for event, pet, food_event, medicine_event, vitals_event in events_raw:
-        pet_name = pet_name or ''
+        pet_name = pet.name if pet and pet.name else ''
+        pet_icon = pet.photo_addr if pet and pet.photo_addr else ''
         match event.type:
             case model.EventType.Food:
                 calories = float(food_event.calories) if food_event else 0
-                event_data['Food'][(pet_name, pet.photo_addr)] = event_data['Food'].get((pet_name, pet.photo_addr), 0) + calories
+                event_data['Food'][(pet_name, pet_icon)] = event_data['Food'].get((pet_name, pet_icon), 0) + calories
             case model.EventType.Litter:
-                event_data['Litter'][(pet_name, pet.photo_addr)] = event_data['Litter'].get((pet_name, pet.photo_addr), 0) + 1
+                event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
             case model.EventType.Medicine:
-                event_data['Medicine'][(pet_name, pet.photo_addr)] = event_data['Medicine'].get((pet_name, pet.photo_addr), 0) + 1
+                event_data['Medicine'][(pet_name, pet_icon)] = event_data['Medicine'].get((pet_name, pet_icon), 0) + 1
             case model.EventType.Vitals:
-                event_data['Vitals'][(pet_name, pet.photo_addr)] = event_data['Vitals'].get((pet_name, pet.photo_addr), 0) + 1
+                event_data['Vitals'][(pet_name, pet_icon)] = event_data['Vitals'].get((pet_name, pet_icon), 0) + 1
 
     return event_data
 
@@ -304,6 +338,8 @@ def days_view(start_date: datetime, limit: int = 10) -> list[dict[str, Any]]:
                         event_data['Litter'][(pet_name, pet_icon)] = event_data['Litter'].get((pet_name, pet_icon), 0) + 1
                     case model.EventType.Medicine:
                         event_data['Medicine'][(pet_name, pet_icon)] = event_data['Medicine'].get((pet_name, pet_icon), 0) + 1
+                    case model.EventType.Vitals:
+                        event_data['Vitals'][(pet_name, pet_icon)] = event_data['Vitals'].get((pet_name, pet_icon), 0) + 1
             
             # Convert tuple keys to JSON-serializable format
             # Use a special delimiter that's unlikely to appear in pet names or paths
@@ -353,25 +389,28 @@ def new(household_uuid: str, event_type: model.EventType, created_by: str,
     try:
         match event_type:
             case model.EventType.Food:
-                new_event = _create_food_event(household_uuid, created_by, data, timestamp)
+                new_event, new_meta = _create_food_event(household_uuid, created_by, data, timestamp)
             case model.EventType.Litter:
-                new_event = _create_litter_event(household_uuid, created_by, data, timestamp)
+                new_event, new_meta = _create_litter_event(household_uuid, created_by, data, timestamp)
             case model.EventType.Medicine:
-                new_event = _create_medicine_event(household_uuid, created_by, data, timestamp)
+                new_event, new_meta = _create_medicine_event(household_uuid, created_by, data, timestamp)
             case model.EventType.Vitals:
-                new_event = _create_vitals_event(household_uuid, created_by, data, timestamp)
+                new_event, new_meta = _create_vitals_event(household_uuid, created_by, data, timestamp)
             case _:
                 return None
 
+        # Add event to session and flush to get the ID
         model.db.session.add(new_event)
+        model.db.session.flush()  # This assigns the ID to new_event without committing
+
+        # If there's metadata, link it to the event
+        if new_meta:
+            new_meta.uuid = str(uuid.uuid4())
+            new_meta.event_id = new_event.id
+            model.db.session.add(new_meta)
+
         model.db.session.commit()
         return new_event
     except Exception as e:
         model.db.session.rollback()
         raise
-
-
-    
-
-
-

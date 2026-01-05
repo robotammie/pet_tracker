@@ -17,7 +17,7 @@ body {
 .nav-bar {
   background-color: #fff;
   padding: 15px 20px;
-  margin: 30px auto;
+  margin: 0px auto;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   gap: 10px;
@@ -28,8 +28,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 20px;
-  padding-top: 15px;
 }
 
 .events-header h2 {
@@ -185,7 +183,7 @@ tr:last-child td {
 
 /* Forms */
 form {
-  margin: 20px 0;
+  margin: 10px 0;
 }
 
 .login-field,
@@ -272,6 +270,81 @@ label {
   margin-bottom: 20px;
 }
 
+/* quick events section */
+.quick-events-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.quick-events-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.quick-event-item-form {
+  display: inline-block;
+  margin: 10px;
+}
+
+.quick-event-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.quick-event-item:hover {
+  background-color: transparent;
+}
+
+.quick-event-item:active {
+  background-color: transparent;
+}
+
+.quick-event-item img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.quick-event-item .quick-event-name {
+  font-size: 12px;
+  color: #555;
+  text-align: center;
+}
+
+.quick-event-type-icon {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-event-type-icon-container {
+  position: relative;
+}
+
+img.quick-event-pet-icon {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  z-index: 10;
+  top: 50%;
+  left: 50%;
+}
 
 
 /* Pets section */
@@ -444,23 +517,31 @@ tr[data-event-type="Food"] {
   background-color: #ffe0e6; /* Light pink */
 }
 
-tr[data-event-type="Litter"] {
-  background-color: #fff9e6; /* Light yellow */
-}
-
-tr[data-event-type="Medicine"] {
-  background-color: #e0f4f4; /* Light blue/teal */
-}
-
 tr[data-event-type="Food"]:hover {
   background-color: #ffd0d9;
+}
+
+tr[data-event-type="Litter"] {
+  background-color: #fff9e6; /* Light yellow */
 }
 
 tr[data-event-type="Litter"]:hover {
   background-color: #fff4d0;
 }
 
+tr[data-event-type="Medicine"] {
+  background-color: #e0f4f4; /* Light blue/teal */
+}
+
 tr[data-event-type="Medicine"]:hover {
+  background-color: #d0eaea;
+}
+
+tr[data-event-type="Vitals"] {
+  background-color: #e0f4f4; /* Light blue/teal */
+}
+
+tr[data-event-type="Vitals"]:hover {
   background-color: #d0eaea;
 }
 
@@ -468,23 +549,31 @@ tr[data-event-type="Medicine"]:hover {
   background-color: #ffe0e6;
 }
 
-.day-table tbody tr[data-event-type="Litter"] {
-  background-color: #fff9e6;
-}
-
-.day-table tbody tr[data-event-type="Medicine"] {
-  background-color: #e0f4f4;
-}
-
 .day-table tbody tr[data-event-type="Food"]:hover {
   background-color: #ffd0d9;
+}
+
+.day-table tbody tr[data-event-type="Litter"] {
+  background-color: #fff9e6;
 }
 
 .day-table tbody tr[data-event-type="Litter"]:hover {
   background-color: #fff4d0;
 }
 
+.day-table tbody tr[data-event-type="Medicine"] {
+  background-color: #e0f4f4;
+}
+
 .day-table tbody tr[data-event-type="Medicine"]:hover {
+  background-color: #d0eaea;
+}
+
+.day-table tbody tr[data-event-type="Vitals"] {
+  background-color: #e0f4f4;
+}
+
+.day-table tbody tr[data-event-type="Vitals"]:hover {
   background-color: #d0eaea;
 }
 
@@ -546,6 +635,7 @@ legend {
 
   .row-fluid {
     padding: 20px;
+    margin: 20px auto;
   }
 
   table {

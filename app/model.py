@@ -142,12 +142,13 @@ class Event(db.Model):
 class SavedEvent(db.Model):
     """Event model representing saved events that can be quick-logged."""
     uuid: Mapped[str] = mapped_column(String(64), primary_key=True)
+    name: Mapped[str] = mapped_column(String(64), nullable=True)
     household_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('household.uuid'), nullable=False)
     household: Mapped["Household"] = relationship()
     pet_uuid: Mapped[str] = mapped_column(String(64), ForeignKey('pet.uuid'), nullable=True)
     pet: Mapped["Pet"] = relationship()
     type: Mapped[EventType] = mapped_column(nullable=False, index=True)
-    meta: Mapped[dict[str, Any]]
+    meta: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=True)
 
     def __repr__(self):
         return '<Event %s - %s>' % (self.type, self.meta)
